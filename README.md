@@ -3,6 +3,8 @@ downgrade tethered checkm8 idevices ios 14, 15.
 
 # Usage
 
+download the ipsw and put it into ipsw/ directory
+
 Example: ./downr1n.sh --downgrade 14.3 
 
 
