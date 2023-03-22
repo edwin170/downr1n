@@ -393,8 +393,8 @@ if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("pyimg4"))'; then
 fi
 
 # Update submodules
-#git submodule update --init --recursive 
-#git submodule foreach git pull origin main
+git submodule update --init --recursive 
+git submodule foreach git pull origin main
 
 # Re-create work dir if it exists, else, make it
 if [ -e work ]; then
@@ -751,7 +751,7 @@ if [ "$downgrade" = "1" ]; then
     echo "boot files created now we will downgrade"
     _runFuturerestore
     sleep 1
-    echo "finished to downgrade now you can downgrade using --boot"
+    echo "finished to downgrade now you can boot using  --boot"
 fi
 
 
