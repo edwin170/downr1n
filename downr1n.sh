@@ -288,7 +288,7 @@ EOF
   rm -rf /tmp/futurerestore/
   "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
     --rdsk work/rdsk.im4p --rkrn work/rkrn.im4p \
-    --latest-sep --latest-baseband $ipsw
+    --latest-sep  `if [ ! "$hasBaseband" = "true" ]; then echo "--latest-baseband" else "--no-baseband"; fi` $ipsw
 }
 
 _boot() {
@@ -582,6 +582,12 @@ if [ "$downgrade" = "1" ]; then
         sleep 1
     done
 
+    if [ "$(remote_cmd "/usr/bin/mgask HasBaseband | grep -E 'true|false'")" = "true" ]; then
+        HasBaseband='true'
+    else
+        HasBaseband='false'
+    fi
+
     remote_cmd "/usr/bin/mount_filesystems"
 
     has_active=$(remote_cmd "ls /mnt6/active" 2> /dev/null)
@@ -687,7 +693,7 @@ if [ "$downgrade" = "1" ]; then
     else
         "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec
     fi
-    "$dir"/Kernel64Patcher work/kcache.dec work/kcache.patched -a -f -e 
+    "$dir"/Kernel64Patcher work/kcache.dec work/kcache.patched -a -b -e 
     python3 -m pyimg4 im4p create -i work/kcache.patched -o work/rkrn.im4p -f rkrn --lzss
 
 
