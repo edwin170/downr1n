@@ -687,7 +687,7 @@ if [ "$downgrade" = "1" ]; then
     else
         "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec
     fi
-    "$dir"/Kernel64Patcher work/kcache.dec work/kcache.patched -a -b -e 
+    "$dir"/Kernel64Patcher work/kcache.dec work/kcache.patched -a -f -e 
     python3 -m pyimg4 im4p create -i work/kcache.patched -o work/rkrn.im4p -f rkrn --lzss
 
 
@@ -756,22 +756,17 @@ if [ "$downgrade" = "1" ]; then
     sleep 1
 
     "$dir"/gaster reset
-    echo "boot files created now we will downgrade"
-    if [ $(_runFuturerestore) ]; then
-        echo "that seems like futurerestore fails, we can try again"
-    fi
-    sleep 2
-    echo "click enter"
-    read -n 1 -s
-    echo "did the futurerestore gave you a error like ERROR: Unable to send iBSS component: Unable to upload data to device, write yes to try again write no to exit "
-    read -r answer
 
-    if [ "$answer" = 'yes' ]; then
-        echo "running future restore again "
+    echo "boot files created now we start to downgrade"
+    if [ $(_runFuturerestore) ]; then
+        echo "sucess?"
+    else
+        echo "that seems like futurerestore fails, we can try again"
         _runFuturerestore
-    elif [ "$answer" = 'no' ]; then
-        echo "thank you for use this"
-        exit;
+        echo "if this fails again try   
+        "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
+        --rdsk work/rdsk.im4p --rkrn work/rkrn.im4p \
+        --latest-sep --latest-baseband $ipsw"
     fi
 
     echo "finished to downgrade now you can boot using  --boot"
