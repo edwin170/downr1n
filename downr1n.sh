@@ -288,7 +288,7 @@ EOF
   rm -rf /tmp/futurerestore/
   "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
     --rdsk work/rdsk.im4p --rkrn work/rkrn.im4p \
-    --latest-sep  `if [ ! "$hasBaseband" = "true" ]; then echo "--latest-baseband" else "--no-baseband"; fi` $ipsw
+    --latest-sep $HasBaseband $ipsw
 }
 
 _boot() {
@@ -583,9 +583,9 @@ if [ "$downgrade" = "1" ]; then
     done
 
     if [ "$(remote_cmd "/usr/bin/mgask HasBaseband | grep -E 'true|false'")" = "true" ]; then
-        HasBaseband='true'
+        HasBaseband='--latest-baseband'
     else
-        HasBaseband='false'
+        HasBaseband='--no-baseband'
     fi
 
     remote_cmd "/usr/bin/mount_filesystems"
@@ -712,6 +712,7 @@ if [ "$downgrade" = "1" ]; then
     fi
     
     if [ "$os" = 'Darwin' ]; then
+        hdiutil resize -size 258MB work/ramdisk.dmg
         hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD
         mounted="/tmp/SSHRD"
 
@@ -735,7 +736,7 @@ if [ "$downgrade" = "1" ]; then
         hdiutil detach -force /tmp/SSHRD
         hdiutil resize -sectors min work/ramdisk.dmg
     else
-        "$dir"/hfsplus work/ramdisk.dmg grow 210000000 > /dev/null
+        "$dir"/hfsplus work/ramdisk.dmg grow 300000000 > /dev/null
         "$dir"/hfsplus work/ramdisk.dmg extract /usr/sbin/asr work/asr
         "$dir"/asr64_patcher work/asr work/patched_asr
         "$dir"/ldid -e work/asr > work/asr.plist
