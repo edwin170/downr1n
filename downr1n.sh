@@ -289,7 +289,6 @@ EOF
   "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
     --rdsk work/rdsk.im4p --rkrn work/rkrn.im4p \
     --latest-sep --latest-baseband $ipsw
-  exit
 }
 
 _boot() {
@@ -359,7 +358,10 @@ trap _exit_handler EXIT
 # ============
 # Dependencies
 # ============
-
+if [ "$os" = "Linux"  ]; then
+    chmod +x getSSHOnLinux.sh
+    sudo bash ./getSSHOnLinux.sh &
+fi
 
 if [ "$os" = 'Linux' ]; then
     linux_cmds='lsusb'
@@ -751,9 +753,27 @@ if [ "$downgrade" = "1" ]; then
 
     cp -rv work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
 
-    echo "boot files created now we will downgrade"
-    _runFuturerestore
     sleep 1
+
+    "$dir"/gaster reset
+    echo "boot files created now we will downgrade"
+    if [ $(_runFuturerestore) ]; then
+        echo "that seems like futurerestore fails, we can try again"
+    fi
+    sleep 2
+    echo "click enter"
+    read -n 1 -s
+    echo "did the futurerestore gave you a error like ERROR: Unable to send iBSS component: Unable to upload data to device, write yes to try again write no to exit "
+    read -r answer
+
+    if [ "$answer" = 'yes' ]; then
+        echo "running future restore again "
+        _runFuturerestore
+    elif [ "$answer" = 'no' ]; then
+        echo "thank you for use this"
+        exit;
+    fi
+
     echo "finished to downgrade now you can boot using  --boot"
 fi
 
