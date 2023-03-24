@@ -633,7 +633,6 @@ if [ true ]; then
             python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
         fi
         
-        remote_cmd "mount_filesystems"
         remote_cp work/kcache.raw root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw
         remote_cp boot/"${deviceid}"/kernelcache.img4 "root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache"
         remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios
