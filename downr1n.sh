@@ -273,6 +273,7 @@ _kill_if_running() {
     fi
 }
 
+
 _runFuturerestore() {
   cat <<EOF
 ===================================================================================================
@@ -287,7 +288,7 @@ EOF
   read -p "Press ENTER to continue <-"
   rm -rf /tmp/futurerestore/
   "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
-    --rdsk work/rdsk.im4p --rkrn work/rkrn.im4p \
+    --rdsk work/rdsk.im4p --rkrn work/krnl.im4p \
     --latest-sep $HasBaseband $ipsw
 }
 
@@ -670,7 +671,7 @@ if [ "$downgrade" = "1" ]; then
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBEC.dec
     fi
     
-    "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b " -v wdt=-1 keepsyms=1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n `if [ "$fixBoot" = "1" ]; then echo "-f"; fi`
+    "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b " -v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -f
     "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T ibec
 
     if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
@@ -688,13 +689,27 @@ if [ "$downgrade" = "1" ]; then
     fi
     python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M
 
-    if [ "$os" = 'Darwin' ]; then
-        "$dir"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec
+    if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
+        if [ "$os" = 'Darwin' ]; then
+            python3 -m pyimg4 im4p extract -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec --extra work/kpp.bin
+        else
+            python3 -m pyimg4 im4p extract -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec --extra work/kpp.bin
+        fi
     else
-        "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec
+        if [ "$os" = 'Darwin' ]; then
+            python3 -m pyimg4 im4p extract -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec
+        else
+            python3 -m pyimg4 im4p extract -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec
+        fi
     fi
-    "$dir"/Kernel64Patcher work/kcache.dec work/kcache.patched -a -b -e 
-    python3 -m pyimg4 im4p create -i work/kcache.patched -o work/rkrn.im4p -f rkrn --lzss
+    
+    "$dir"/Kernel64Patcher work/kcache.dec work/krnl.patched -a -b -e 
+
+    if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
+        python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p --extra work/kpp.bin -f rkrn --lzss
+    else
+        python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p -f rkrn --lzss
+    fi
 
 
     "$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/devicetree.img4 -M work/IM4M -T rdtr
@@ -712,20 +727,19 @@ if [ "$downgrade" = "1" ]; then
     fi
     
     if [ "$os" = 'Darwin' ]; then
-        hdiutil resize -size 258MB work/ramdisk.dmg
         hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD
         mounted="/tmp/SSHRD"
 
         "$dir"/asr64_patcher $mounted/usr/sbin/asr work/patched_asr
         "$dir"/ldid -e $mounted/usr/sbin/asr > work/asr.plist
         "$dir"/ldid -Swork/asr.plist work/patched_asr
-        chmod 755 work/patched_asr
+        chmod -R 755 work/patched_asr
 
         cp $mounted/usr/local/bin/restored_external work/restored_external
         "$dir"/restored_external64_patcher work/restored_external work/patched_restored_external
         "$dir"/ldid -e work/restored_external > work/restored_external.plist
         "$dir"/ldid -Swork/restored_external.plist work/patched_restored_external
-        chmod 755 work/patched_restored_external
+        chmod -R 755 work/patched_restored_external
 
         rm $mounted/usr/sbin/asr
         rm $mounted/usr/local/bin/restored_external
@@ -734,9 +748,8 @@ if [ "$downgrade" = "1" ]; then
         mv work/patched_restored_external $mounted/usr/local/bin/restored_external
 
         hdiutil detach -force /tmp/SSHRD
-        hdiutil resize -sectors min work/ramdisk.dmg
     else
-        "$dir"/hfsplus work/ramdisk.dmg grow 300000000 > /dev/null
+
         "$dir"/hfsplus work/ramdisk.dmg extract /usr/sbin/asr work/asr
         "$dir"/asr64_patcher work/asr work/patched_asr
         "$dir"/ldid -e work/asr > work/asr.plist
@@ -754,6 +767,9 @@ if [ "$downgrade" = "1" ]; then
         
         "$dir"/hfsplus work/ramdisk.dmg add work/patched_asr /usr/sbin/asr
         "$dir"/hfsplus work/ramdisk.dmg add work/patched_restored_external /usr/local/bin/restored_external
+
+        hfsplus work/ramdisk.dmg chmod 100755 /usr/sbin/asr
+        hfsplus work/ramdisk.dmg chmod 100755 /usr/local/bin/restored_external
     fi
 
     python3 -m pyimg4 im4p create -i work/ramdisk.dmg -o work/rdsk.im4p -f rdsk
@@ -764,16 +780,31 @@ if [ "$downgrade" = "1" ]; then
 
     "$dir"/gaster reset
 
-    echo "boot files created now we start to downgrade"
-    if [ $(_runFuturerestore) ]; then
-        echo "sucess?"
-    else
-        echo "that seems like futurerestore fails, we can try again"
+    _runFuturerestore
+    sleep 1
+    echo "
+    
+    
+    
+    
+    
+    
+    
+    did the futurerestore gave you a error like ERROR: Unable to send iBSS component: Unable to upload data to device, write (yes) to try again write (no) to exit 
+    
+    
+    
+    "
+    read -r answer
+
+    if [ "$answer" = 'yes' ]; then
+        echo "put your device on dfu mode"
+        "$dir"/gaster pwn
+        echo "running future restore again "
         _runFuturerestore
-        echo "if this fails again try   
-        "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
-        --rdsk work/rdsk.im4p --rkrn work/rkrn.im4p \
-        --latest-sep --latest-baseband $ipsw"
+    elif [ "$answer" = 'no' ]; then
+        echo "thank you for use this"
+        exit;
     fi
 
     echo "finished to downgrade now you can boot using  --boot"
