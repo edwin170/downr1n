@@ -34,7 +34,11 @@ Example: ./downr1n.sh --downgrade 14.3
    - irecovery -n
 
 
+# How do i jailbreak it ?
 
+- jailbreak with pogo: ./downr1n --downgrade (YourVer = 14.3) --jailbreak 
+
+- taurine: ./downr1n --downgrade (YourVer = 14.3) --jailbreak --taurine
 
 # Credits
 
