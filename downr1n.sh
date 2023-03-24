@@ -61,6 +61,8 @@ iOS 15 - 14.0 downgrade tool ./downr1n --downgrade 15.7 (the ios of your device)
 Options:
     --downgrade         downgrade tethered your device to ios 14,15.
     --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
+    --jailbreak        jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
+    --taurine          jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
     --boot              this boot the device.
     --fixBoot           that will boot the device using fsboot
     --debug             Debug the script
@@ -85,6 +87,12 @@ parse_opt() {
             ;;
         --boot)
             boot=1
+            ;;
+        --jailbreak)
+            jailbreak=1
+            ;;
+        --taurine)
+            taurine=1
             ;;
         --fixBoot)
             fixBoot=1

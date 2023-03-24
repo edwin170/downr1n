@@ -12,6 +12,10 @@ Example: ./downr1n.sh --downgrade 14.3
 
     --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
 
+    --jailbreak        jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
+
+    --taurine          jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
+
     --boot              this boot the device.
 
     --fixBoot           that will boot the device using fsboot
