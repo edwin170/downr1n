@@ -768,8 +768,8 @@ if [ "$downgrade" = "1" ]; then
         "$dir"/hfsplus work/ramdisk.dmg add work/patched_asr /usr/sbin/asr
         "$dir"/hfsplus work/ramdisk.dmg add work/patched_restored_external /usr/local/bin/restored_external
 
-        hfsplus work/ramdisk.dmg chmod 100755 /usr/sbin/asr
-        hfsplus work/ramdisk.dmg chmod 100755 /usr/local/bin/restored_external
+        "$dir"/hfsplus work/ramdisk.dmg chmod 100755 /usr/sbin/asr
+        "$dir"/hfsplus work/ramdisk.dmg chmod 100755 /usr/local/bin/restored_external
     fi
 
     python3 -m pyimg4 im4p create -i work/ramdisk.dmg -o work/rdsk.im4p -f rdsk
