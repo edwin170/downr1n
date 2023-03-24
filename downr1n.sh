@@ -554,7 +554,7 @@ fi
 # ============
 
 # Dump blobs, and install pogo if needed 
-if [true]; then
+if [ true ]; then
     mkdir -p blobs
 
     cd ramdisk
@@ -908,6 +908,7 @@ if [true]; then
         fi
     
         echo "finished to downgrade now you can boot using  --boot"
+    fi
 fi
 
 
