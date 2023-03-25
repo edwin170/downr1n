@@ -1,5 +1,5 @@
 # downr1n
-downgrade tethered checkm8 idevices ios 14, 15.
+A tethered downgrade tool for checkm8 idevices on ios 14 & 15.
 
 # Usage
 
@@ -25,11 +25,11 @@ Example: ./downr1n.sh --downgrade 14.3
 ---
 
 # Dependencies
-- A desactivated passcode on A10-A11 
+- A deactivated passcode on A10-A11 
 - unzip, python3
 - Update or Install libimobiledevice-utils, libusbmuxd-tools
 - A IPSW iOS 14-15 
-- a MACOS or LINUX, it's better that you use a mac it's more estable and faster
+- A MACOS or LINUX computer, it's better that you use a mac it's more stable and faster
 
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
