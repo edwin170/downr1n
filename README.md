@@ -40,9 +40,9 @@ Example: ./downr1n.sh --downgrade 14.3
 
 # How do i jailbreak it ?
 
-- jailbreak with pogo: ./downr1n --downgrade (YourVer = 14.3) --jailbreak 
+- jailbreak with pogo: ./downr1n --jailbreak (YourVer = 14.3) 
 
-- taurine: ./downr1n --downgrade (YourVer = 14.3) --jailbreak --taurine
+- taurine: ./downr1n --jailbreak (YourVer = 14.3) --taurine 
 
 # Credits
 
