@@ -308,7 +308,7 @@ _boot() {
     
     echo "[*] Booting device"
 
-    "$dir"/irecovery -f "blobs/"$deviceid"-"$version".der"
+    "$dir"/irecovery -f "blobs/"$deviceid"-"$version".shsh2"
     sleep 1
 
     "$dir"/irecovery -f "boot/${deviceid}/iBSS.img4"
@@ -824,7 +824,8 @@ if [ true ]; then
         else
             "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o work/ramdisk.dmg
         fi
-        
+                "$dir"/gaster reset
+
         if [ "$os" = 'Darwin' ]; then
             hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD
             mounted="/tmp/SSHRD"
