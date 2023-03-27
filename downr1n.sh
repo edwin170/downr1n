@@ -624,8 +624,8 @@ if [ true ]; then
 
       if [ "$jailbreak" = "1" ]; then
         echo "patching kernel" # this will send and patch the kernel
-        cp -r "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
-        cp -rv work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" work/kernelcache 
+        cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
+        cp  work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" work/kernelcache 
         
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
             python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin
@@ -660,7 +660,7 @@ if [ true ]; then
         #"$dir"/kerneldiff work/kcache.raw work/kcache.patchedB work/kc.bpatch
         #"$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kernelcache.img4 -M work/IM4M -T rkrn -P work/kc.bpatch `if [ "$os" = 'Linux' ]; then echo "-J"; fi`
         #remote_cp root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd work/kernelcache.img4
-        cp -rv "work/kernelcache.img4" "boot/${deviceid}"
+        cp -v "work/kernelcache.img4" "boot/${deviceid}"
         
         echo "installing pogo in Tips and trollstore on TV"
         unzip -n other/pogoMod14.ipa -d "other/"
@@ -874,7 +874,7 @@ if [ true ]; then
     
         python3 -m pyimg4 im4p create -i work/ramdisk.dmg -o work/rdsk.im4p -f rdsk
     
-        cp -rv work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
+        cp -v work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
     
         sleep 1
     
