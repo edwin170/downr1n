@@ -32,13 +32,13 @@ fi
 # =========
 remote_cmd() {
     sleep 1
-    "$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "$@"
+    "$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p6413 root@localhost "$@"
     sleep 1
 }
 
 remote_cp() {
     sleep 1
-    "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -P2222 "$@"
+    "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -p6413 "$@"
     sleep 1
 }
 
@@ -584,11 +584,11 @@ if [ true ]; then
         "$dir"/iproxy 6413 22 >/dev/null &
     fi
 
-    if ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "echo connected" &> /dev/null); then
+    if ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p6413 root@localhost "echo connected" &> /dev/null); then
         echo "[*] Waiting for the ramdisk to finish booting"
     fi
 
-    while ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "echo connected" &> /dev/null); do
+    while ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p6413 root@localhost "echo connected" &> /dev/null); do
         sleep 1
     done
 
@@ -605,7 +605,7 @@ if [ true ]; then
         echo "[!] Active file does not exist! Please use SSH to create it"
         echo "    /mnt6/active should contain the name of the UUID in /mnt6"
         echo "    When done, type reboot in the SSH session, then rerun the script"
-        echo "    ssh root@localhost -p 2222"
+        echo "    ssh root@localhost -p 6413"
         exit
     fi
     active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
