@@ -463,11 +463,12 @@ if [ "$(get_device_mode)" = "ramdisk" ]; then
     _kill_if_running iproxy
     echo "[*] Rebooting device in SSH Ramdisk"
     if [ "$os" = 'Linux' ]; then
-        sudo "$dir"/iproxy 2222 22 &
+        sudo "$dir"/iproxy 6413 22 >/dev/null &
     else
-        "$dir"/iproxy 2222 22 &
+        "$dir"/iproxy 6413 22 >/dev/null &
     fi
-    sleep 1
+    sleep 2
+    remote_cmd "/usr/sbin/nvram auto-boot=false"
     remote_cmd "/sbin/reboot"
     _kill_if_running iproxy
     _wait recovery
@@ -578,9 +579,9 @@ if [ true ]; then
 
     # Execute the commands once the rd is booted
     if [ "$os" = 'Linux' ]; then
-        sudo "$dir"/iproxy 2222 22 &
+        sudo "$dir"/iproxy 6413 22 >/dev/null &
     else
-        "$dir"/iproxy 2222 22 &
+        "$dir"/iproxy 6413 22 >/dev/null &
     fi
 
     if ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "echo connected" &> /dev/null); then
