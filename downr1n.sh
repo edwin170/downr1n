@@ -59,11 +59,12 @@ Usage: $0 [Options] [ subcommand | iOS version which are you]. put your ipsw in 
 iOS 15 - 14.0 downgrade tool ./downr1n --downgrade 15.7 (the ios of your device) ipsw 
 
 Options:
-    --downgrade         downgrade tethered your device to ios 14,15.
+    --downgrade         downgrade tethered your device to ios 14. you can use --localboot or --fsboot in order to fix some problems if you had them 
     --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
     --jailbreak        jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
     --taurine          jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
     --boot              this boot the device.
+    --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files
     --fixBoot           that will boot the device using fsboot
     --debug             Debug the script
 
@@ -96,6 +97,15 @@ parse_opt() {
             ;;
         --fixBoot)
             fixBoot=1
+            ;;
+        --dont-restore)
+            dontRestore=1
+            ;;
+        --localboot)
+            local=1
+            ;;
+        --fsboot)
+            fsboot=1
             ;;
         --dfuhelper)
             dfuhelper=1
@@ -297,7 +307,7 @@ EOF
   rm -rf /tmp/futurerestore/
   "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
     --rdsk work/rdsk.im4p --rkrn work/krnl.im4p \
-    --latest-sep $HasBaseband $ipsw
+    --latest-sep "$HasBaseband" $ipsw
 }
 
 _boot() {
@@ -311,12 +321,20 @@ _boot() {
     "$dir"/irecovery -f "blobs/"$deviceid"-"$version".shsh2"
     sleep 1
 
-    "$dir"/irecovery -f "boot/${deviceid}/iBSS.img4"
-    sleep 1
+    if [[ ! "$cpid" == *"0x801"* ]]; then
+        "$dir"/irecovery -f "boot/${deviceid}/iBSS.img4"
+        sleep 1
+    fi
 
     "$dir"/irecovery -f "boot/${deviceid}/iBEC.img4"
     sleep 3
     
+    if [ "$local" = "1" ]; then 
+        echo "booting ..."
+        echo "your devicd should be booting into the ios using localboot:)"
+        exit;
+    fi
+
     if [[ "$cpid" == *"0x801"* ]]; then
         "$dir"/irecovery -c "go"
         sleep 2
@@ -338,10 +356,10 @@ _boot() {
     "$dir"/irecovery -c "firmware"
     sleep 1
 
-    "$dir"/irecovery -f "boot/${deviceid}/kernelcache.img4"
+    "$dir"/irecovery -f "boot/${deviceid}/kernelcache.img4" 
     sleep 1
 
-    "$dir"/irecovery -c `if [ ! "$fixBoot" = "1" ]; then echo "bootx" else "fsboot"; fi`
+    "$dir"/irecovery -c "$(if [ ! "$fsboot" = "1" ]; then echo "bootx"; else echo "fsboot"; fi)"
     exit;
 }
 
@@ -535,10 +553,10 @@ if [[ ${#ipsw_files[@]} -gt 1 ]]; then
 fi
 cd ..
 
-if [ -a "$ipsw" ] || [ "${ipsw: -5}" == ".ipsw" ]; then
+if [ -a $ipsw ] || [ "${ipsw: -5}" == ".ipsw" ]; then
   echo "Continuing..."
 else
-  _eexit "$ipsw is not a valid ipsw file."
+  _eexit $ipsw "is not a valid ipsw file."
 fi
 
 if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
@@ -620,10 +638,10 @@ if [ true ]; then
 
     fi
 
-    "$dir"/img4tool -e -s $(pwd)/blobs/"$deviceid"-"$version".shsh2 -m work/IM4M
+    "$dir"/img4tool -e -s blobs/"$deviceid"-"$version".shsh2 -m work/IM4M
     echo "Dumpped SHSH"
 
-      if [ "$jailbreak" = "1" ]; then
+    if [ "$jailbreak" = "1" ]; then
         echo "patching kernel" # this will send and patch the kernel
         cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
         cp  work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" work/kernelcache 
@@ -713,6 +731,14 @@ if [ true ]; then
 
     fi
 
+    remote_cmd "/usr/sbin/nvram auto-boot=false"
+    remote_cmd "/sbin/reboot"
+    _wait recovery
+    sleep 4
+    _dfuhelper "$cpid"
+    sleep 3
+        
+
     echo "Patchimg some boot files..."
     if [ "$downgrade" = "1" ]; then
         sleep 1
@@ -724,13 +750,7 @@ if [ true ]; then
             mkdir boot/"$deviceid"
         fi
 
-        remote_cmd "/usr/sbin/nvram auto-boot=false"
-        remote_cmd "/sbin/reboot"
-        _wait recovery
-        sleep 4
-        _dfuhelper "$cpid"
-        sleep 3
-        
+
         if [ "$fixBoot" = "1" ]; then # i put it because my friend tested on his ipad and that does not boot so when we download all file from the internet so not extracting ipsw that boot fine idk why 
 
             cd work
@@ -750,7 +770,7 @@ if [ true ]; then
         else
             #that will extract the files needed
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
-            cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
+            cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             
@@ -761,18 +781,15 @@ if [ true ]; then
             fi
         fi
 
-        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec
+        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec 
         "$dir"/iBoot64Patcher work/iBSS.dec work/iBSS.patched
         "$dir"/img4 -i work/iBSS.patched -o work/iBSS.img4 -M work/IM4M -A -T ibss
     
-        if [ "$fixBoot" = "1" ]; then # fixboot will download the boot files, sometimes that fix most of boot also boot with anoter patcher
-            "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
-        else
-            "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBEC.dec
-        fi
-        
-        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b " -v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
-        "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T ibec
+
+        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b " -v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
+        "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
+
     
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
             python3 -m pyimg4 im4p extract -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kcache.raw --extra work/kpp.bin
@@ -878,24 +895,18 @@ if [ true ]; then
         cp -v work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
     
         sleep 1
-    
+        
+        set +e
+
         "$dir"/gaster reset
-    
+
+        if [ "$dontRestore" = "1" ]; then
+            echo "finished creating boot files now you can --boot in order to get boot to the system"
+            exit;
+        fi
         _runFuturerestore
         sleep 1
-        echo "
-        
-        
-        
-        
-        
-        
-        
-        did the futurerestore gave you a error like ERROR: Unable to send iBSS component: Unable to upload data to device, write (yes) to try again write (no) to exit 
-        
-        
-        
-        "
+        echo -e "\n \n \n \n did the futurerestore gave you a error like ERROR: Unable to send iBSS component: Unable to upload data to device, write (yes) to try again write (no) to exit "
         read -r answer
     
         if [ "$answer" = 'yes' ]; then
