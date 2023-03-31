@@ -733,10 +733,18 @@ if [ true ]; then
 
     remote_cmd "/usr/sbin/nvram auto-boot=false"
     remote_cmd "/sbin/reboot"
-    _wait recovery
-    sleep 4
-    _dfuhelper "$cpid"
-    sleep 3
+    sleep 12
+    if [ "$(get_device_mode)" = "dfu" ]; then
+        echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing button."
+        read -p "click enter if you got force reboot the iphone"
+        "$dir"/gaster pwn
+    else
+        _wait recovery
+        sleep 4
+        _dfuhelper "$cpid"
+        sleep 3
+    fi
+
         
 
     echo "Patchimg some boot files..."
