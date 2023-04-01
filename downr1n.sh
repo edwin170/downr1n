@@ -38,7 +38,7 @@ remote_cmd() {
 
 remote_cp() {
     sleep 1
-    "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -p6413 "$@"
+    "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 6413' --progress "$@"
     sleep 1
 }
 
