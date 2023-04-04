@@ -18,7 +18,7 @@ Example: ./downr1n.sh --downgrade 14.3
    
     --boot              this boot the device.
    
-    --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files
+    --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files. example: --downgrade 14.3 --dont-restore
    
     --fixBoot           that will boot the device using fsboot
    
