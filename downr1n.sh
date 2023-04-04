@@ -909,7 +909,7 @@ if [ true ]; then
         "$dir"/gaster reset
 
         if [ "$dontRestore" = "1" ]; then
-            echo "finished creating boot files now you can --boot in order to get boot to the system"
+            echo "finished creating boot files,now you can --boot in order to get boot to the system"
             exit;
         fi
         _runFuturerestore
@@ -918,16 +918,16 @@ if [ true ]; then
         read -r answer
     
         if [ "$answer" = 'yes' ]; then
-            echo "put your device on dfu mode"
+            echo "put your device in dfu mode"
             "$dir"/gaster pwn
             echo "running future restore again "
             _runFuturerestore
         elif [ "$answer" = 'no' ]; then
-            echo "thank you for use this"
+            echo "thank you for using downr1n"
             exit;
         fi
     
-        echo "finished to downgrade now you can boot using  --boot"
+        echo "finished downgrade,now you can boot using  --boot"
     fi
 fi
 
