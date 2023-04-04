@@ -735,7 +735,7 @@ if [ true ]; then
     remote_cmd "/sbin/reboot"
     sleep 12
     if [ "$(get_device_mode)" = "dfu" ]; then
-        echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing button."
+        echo "device in broken dfu mode. please force reboot and try to put it on dfu mode by precing button."
         read -p "click enter if you got force reboot the iphone"
         "$dir"/gaster pwn
     else
@@ -747,7 +747,7 @@ if [ true ]; then
 
         
 
-    echo "Patchimg some boot files..."
+    echo "Patching some boot files..."
     if [ "$downgrade" = "1" ]; then
         sleep 1
 
