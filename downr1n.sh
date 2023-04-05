@@ -394,7 +394,7 @@ if [ "$os" = 'Linux' ]; then
     linux_cmds='lsusb'
 fi
 
-for cmd in clang unzip python3 git ssh scp killall sudo grep pgrep ${linux_cmds}; do
+for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep ${linux_cmds}; do
     if ! command -v "${cmd}" > /dev/null; then
         echo "[-] Command '${cmd}' not installed, please install it!";
         cmd_not_found=1
@@ -907,13 +907,17 @@ if [ true ]; then
         set +e
 
         "$dir"/gaster reset
+        sleep 1
+        "$dir"/irecovery -f "blobs/"$deviceid"-"$version".shsh2"
 
         if [ "$dontRestore" = "1" ]; then
             echo "finished creating boot files now you can --boot in order to get boot to the system"
             exit;
         fi
-        _runFuturerestore
+        sleep 2
+        echo "executing $dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw"
         sleep 1
+        _runFuturerestore
         echo -e "\n \n \n \n did the futurerestore gave you a error like ERROR: Unable to send iBSS component: Unable to upload data to device, write (yes) to try again write (no) to exit "
         read -r answer
     
