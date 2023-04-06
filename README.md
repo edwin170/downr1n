@@ -41,8 +41,8 @@ Example: ./downr1n.sh --downgrade 14.3
 
 # Fix some problems when booting
 
-Right now not working at all but you can try it 
-sometimes we have problems like deep sleep or iOS does not boot so i added two options for that reason --localboot and --fsboot. both are patchers by the palera1n team in order to fix some problems when booting so you must use it when you will create boot files for example --downgrade () --dont-restore (--localboot) or (--fsboot), when that is finished creating, you just have to boot the iDevice for example --boot (--localboot) or (--fsboot), its not neccessary that you need to use them but if you had some problems you can.
+Right now it is not working at all but you can try it 
+Sometimes we have problems like deep sleep or iOS does not boot so i added two options for that reason --localboot and --fsboot. both are patchers by the palera1n team in order to fix some problems when booting so you must use it when you will create boot files for example --downgrade () --dont-restore (--localboot) or (--fsboot), when that is finished creating, you just have to boot the iDevice for example --boot (--localboot) or (--fsboot), its not neccessary that you need to use them but if you had some problems you can.
 
 # Help with something join my Discord server https://discord.gg/S9XyNkwqRb
 # How do i jailbreak my downgraded iDevice ?
