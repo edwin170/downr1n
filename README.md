@@ -1,9 +1,9 @@
 # downr1n
-downgrade tethered checkm8 idevices ios 14, 15.
+downgrade tethered checkm8 iDevices ios 14, 15.
 
 # Usage
 
-download the ipsw and put it into ipsw/ directory
+Download the iPSW and put it into ipsw/ directory
 
 Example: ./downr1n.sh --downgrade 14.3 
 
@@ -16,7 +16,7 @@ Example: ./downr1n.sh --downgrade 14.3
    
     --taurine          jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
    
-    --boot              this boot the device.
+    --boot              this will boot the device.
    
     --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files. example: --downgrade 14.3 --dont-restore
    
@@ -27,11 +27,11 @@ Example: ./downr1n.sh --downgrade 14.3
 ---
 
 # Dependencies
-- A desactivated passcode on A10-A11 
+- A deactivated passcode on A10-A11 SoCs
 - unzip, python3
 - Update or Install libimobiledevice-utils, libusbmuxd-tools
 - A IPSW iOS 14-15 
-- a MACOS or LINUX, it's better that you use a mac it's more estable and faster
+- a macOS or Linux Computer, it's better that you use a Mac because it's more stable and faster
 
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
