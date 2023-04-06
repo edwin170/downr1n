@@ -27,7 +27,7 @@ Example: ./downr1n.sh --downgrade 14.3
 ---
 
 # Dependencies
-- A deactivated passcode on A10-A11 SoCs
+- A deactivated passcode on A10-A11 Devices
 - unzip, python3
 - Update or Install libimobiledevice-utils, libusbmuxd-tools
 - A IPSW iOS 14-15 
