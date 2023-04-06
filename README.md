@@ -80,7 +80,7 @@ sometimes we have problems like deep sleep or the ios doesnt boot so i add two o
 
 - [libimobiledevice](https://github.com/libimobiledevice) for several tools used in this project (irecovery, ideviceenterrecovery etc), and [nikias](https://github.com/nikias) for keeping it up to date
 
-- [Ralp0045](https://github.com/Ralph0045/Kernel64Patcher) amazing dtree_patcher and kernel64patcher ;)
+- [Ralp0045](https://github.com/Ralph0045/Kernel64Patcher) for the amazing dtree_patcher and kernel64patcher ;)
 
 </p>
 </details>
