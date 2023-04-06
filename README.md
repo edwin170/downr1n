@@ -62,15 +62,15 @@ sometimes we have problems like deep sleep or the ios doesnt boot so i add two o
  
 </details>
 
-<details><summary>Other credits for tools and codes used in downr1n</summary>
+<details><summary>Other credits for tools and code used in downr1n</summary>
 
 - [mineek](https://github.com/mineek/) because sunst0rm
 
-- [exploit](https://github.com/exploit3dguy/) for asrpatcher
+- [exploit](https://github.com/exploit3dguy/) for asr64_patcher
 
 - [iSuns9](https://github.com/iSuns9/)
 
-- [Nathan](https://github.com/verygenericname) for the ramdisk
+- [Nathan](https://github.com/verygenericname) for the SSH ramdisk
     
 - [m1sta](https://github.com/m1stadev) for [pyimg4](https://github.com/m1stadev/PyIMG4)
 
@@ -78,9 +78,9 @@ sometimes we have problems like deep sleep or the ios doesnt boot so i add two o
 
 - [xerub](https://github.com/xerub) for [img4lib](https://github.com/xerub/img4lib) and [restored_external](https://github.com/xerub/sshrd) in the ramdisk
 
-- [libimobiledevice](https://github.com/libimobiledevice) for several tools used in this project (irecovery, ideviceenterrecovery etc), and [nikias](https://github.com/nikias) for keeping it up to date
+- [libimobiledevice](https://github.com/libimobiledevice) for several tools used in this project (irecovery, ideviceenterrecovery, etc) and [nikias](https://github.com/nikias) for keeping them up to date
 
-- [Ralp0045](https://github.com/Ralph0045/Kernel64Patcher) for the amazing dtree_patcher and kernel64patcher ;)
+- [Ralp0045](https://github.com/Ralph0045/Kernel64Patcher) for the amazing dtree_patcher and Kernel64Patcher ;)
 
 </p>
 </details>
