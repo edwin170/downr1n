@@ -39,12 +39,12 @@ Example: ./downr1n.sh --downgrade 14.3
    - futurerestore --exit-recovery
    - irecovery -n
 
-# fix some problems to boot
+# Fix some problems when booting
 
-rn not working at all but you can try it 
-sometimes we have problems like deep sleep or the ios doesnt boot so i add two option for that reason --localboot and --fsboot. both are patchers by palera1n team in order to fix some problems in the boot so you must use it when you will create boot files for example --downgrade () --dont-restore (--localboot) or (--fsboot), when that finish creating that you just have to boot for example --boot (--localboot) or (--fsboot), its not neccessary that you need to use them but if you had some problems you can
+Right now not working at all but you can try it 
+sometimes we have problems like deep sleep or iOS does not boot so i added two options for that reason --localboot and --fsboot. both are patchers by the palera1n team in order to fix some problems when booting so you must use it when you will create boot files for example --downgrade () --dont-restore (--localboot) or (--fsboot), when that is finished creating, you just have to boot the iDevice for example --boot (--localboot) or (--fsboot), its not neccessary that you need to use them but if you had some problems you can.
 
-# help with something join to discord server https://discord.gg/S9XyNkwqRb
+# Help with something join my Discord server https://discord.gg/S9XyNkwqRb
 # How do i jailbreak my downgraded iDevice ?
 
 - jailbreak with pogo: ./downr1n --jailbreak (YourVer = 14.3) 
