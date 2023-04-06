@@ -30,7 +30,7 @@ Example: ./downr1n.sh --downgrade 14.3
 - A deactivated passcode on A10-A11 Devices
 - unzip, python3
 - Update or Install libimobiledevice-utils, libusbmuxd-tools
-- An iOS 14-15 iPSW 
+- An iOS 14-15 iPSW file
 - a macOS or Linux Computer, it's better that you use a Mac because it's more stable and faster
 
 # Warnings
