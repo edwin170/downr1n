@@ -1,5 +1,5 @@
 # downr1n
-downgrade tethered checkm8 iDevices to iOS 14 or 15.
+Downgrade tethered checkm8 iDevices to iOS 14 or 15.
 
 # Usage
 
@@ -53,7 +53,7 @@ Sometimes we have problems like deep sleep or iOS does not boot so i added two o
 
 # Credits
 
-# with love from Edwin :)
+# made with love from Edwin :)
 
 <details><summary>thanks to</summary>
 <p>
