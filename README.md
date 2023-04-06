@@ -8,7 +8,7 @@ Download the iPSW and put it into ipsw/ directory
 Example: ./downr1n.sh --downgrade 14.3 
 
    
-    --downgrade         downgrade tethered your device to ios 14.
+    --downgrade         downgrade tethered your device to iOS 14.
    
     --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
    
@@ -18,11 +18,11 @@ Example: ./downr1n.sh --downgrade 14.3
    
     --boot              this will boot the device.
    
-    --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files. example: --downgrade 14.3 --dont-restore
+    --dont-restore      this will avoid the restore using futurerestore, this can be used if yo only wanted to create the boot files. example: --downgrade 14.3 --dont-restore
    
-    --fixBoot           that will boot the device using fsboot
+    --fixBoot           this will boot the device using fsboot
    
-    --debug             Debug the scrip
+    --debug             Debug the script
 
 ---
 
