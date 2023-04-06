@@ -1,5 +1,5 @@
 # downr1n
-downgrade tethered checkm8 iDevices ios 14, 15.
+downgrade tethered checkm8 iDevices to iOS 14 or 15.
 
 # Usage
 
@@ -8,7 +8,7 @@ Download the iPSW and put it into ipsw/ directory
 Example: ./downr1n.sh --downgrade 14.3 
 
    
-    --downgrade         downgrade tethered your device to iOS 14.
+    --downgrade         downgrade tethered your device to iOS 14.* or 15.*
    
     --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
    
