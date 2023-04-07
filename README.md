@@ -33,6 +33,12 @@ Example: ./downr1n.sh --downgrade 14.3
 - A IPSW iOS 14-15 
 - a MACOS or LINUX, it's better that you use a mac it's more estable and faster
 
+# problems putting the device on pwndfu mode
+
+- there is a mode name dfu which the device is in black screen but when we downgrade the device recovery mode turn into black screen as well so to put the device into pwndfu mode you need to put it on the real dfu mode by pressing poweroff+(volumendown or homebutton) look at a tutorial on youtube to got it, when you are already pwndfu execute ./binaries/$(uname)/gaster pwn to pwdnfu but the device must be on dfu mode to success, if the device is not, it will loop.
+
+- if you want to try fix the recovery mode. copying firmware/all_flash/* of a ipsw from the version that you are or you were before downgrade to the ipsw from the ios that you want to downgrade. that should come back the recovery mode. 
+
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
  **If your device is stuck in recovery, please run one of the following:**
