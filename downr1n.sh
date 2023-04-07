@@ -405,18 +405,6 @@ if [ "$cmd_not_found" = "1" ]; then
 fi
 
 
-# Download gaster
-if [ -e "$dir"/gaster ]; then
-    "$dir"/gaster &> /dev/null > /dev/null | grep -q 'usb_timeout: 5' && rm "$dir"/gaster
-fi
-
-if [ ! -e "$dir"/gaster ]; then
-    curl -sLO https://static.palera.in/deps/gaster-"$os".zip
-    unzip gaster-"$os".zip
-    mv gaster "$dir"/
-    rm -rf gaster gaster-"$os".zip
-fi
-
 # Check for pyimg4
 if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("pyimg4"))'; then
     echo '[-] pyimg4 not installed. Press any key to install it, or press ctrl + c to cancel'
