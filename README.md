@@ -44,7 +44,7 @@ Example: ./downr1n.sh --downgrade 14.3
 rn not working at all but you can try it 
 sometimes we have problems like deep sleep or the ios doesnt boot so i add two option for that reason --localboot and --fsboot. both are patchers by palera1n team in order to fix some problems in the boot so you must use it when you will create boot files for example --downgrade () --dont-restore (--localboot) or (--fsboot), when that finish creating that you just have to boot for example --boot (--localboot) or (--fsboot), its not neccessary that you need to use them but if you had some problems you can
 
-# help with something join to discord server https://discord.gg/S9XyNkwqRb
+# help with something join to discord server https://discord.gg/AjEHs5ug
 # How do i jailbreak it ?
 
 - jailbreak with pogo: ./downr1n --jailbreak (YourVer = 14.3) 
