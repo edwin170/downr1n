@@ -27,6 +27,9 @@ extractedIpsw="ipsw/extracted/"
 if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git
 fi
+if  [ -e .downgraded ]; then
+    downgrade=1
+fi
 # =========
 # Functions
 # =========
@@ -38,7 +41,12 @@ remote_cmd() {
 
 remote_cp() {
     sleep 1
-    "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 6413' --progress "$@"
+    if [ "$downgrade" ]; then
+        "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 6413' --progress "$@"
+    else
+        "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -P6413 $@
+    fi
+
     sleep 1
 }
 
@@ -69,7 +77,7 @@ Options:
     --debug             Debug the script
 
 Subcommands:
-    clean               Deletes the created boot files 
+    clean               clean the downgrade tool in order to downgrade again.
 
 
 
@@ -441,7 +449,7 @@ if [ "$debug" = "1" ]; then
 fi
 
 if [ "$clean" = "1" ]; then
-    rm -rf  work blobs/ boot/"$deviceid"/  ipsw/*
+    rm -rf  work blobs/ boot/"$deviceid"/  ipsw/extracted .downgraded
     echo "[*] Removed the created boot files"
     exit
 fi
@@ -719,6 +727,29 @@ if [ true ]; then
 
     fi
 
+        echo "patching kernel ..." # this will send and patch the kernel
+        
+        cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
+        
+        if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
+            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin
+        else
+            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
+        fi
+
+        remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw
+        remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios
+        remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/kpf15.ios"
+        remote_cmd "/bin/chmod 755 /mnt1/private/var/root/kpf15.ios"
+        sleep 1
+        
+        if [ ! $(remote_cmd "/mnt1/private/var/root/kpf15.ios /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched") ]; then
+            echo "you have the kernelpath already installed "
+        fi
+
+        remote_cp root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/
+
+
     remote_cmd "/usr/sbin/nvram auto-boot=false"
     remote_cmd "/sbin/reboot"
     sleep 12
@@ -786,19 +817,13 @@ if [ true ]; then
         "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b " -v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
 
-    
-        if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p extract -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kcache.raw --extra work/kpp.bin
-        else
-            python3 -m pyimg4 im4p extract -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kcache.raw
-        fi
-    
-        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched -a -b -e `if [ "$fixBoot" = "1" ]; then echo "-s"; fi`
+
+        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -a -b -e `if [ "$fixBoot" = "1" ]; then echo "-s"; fi`
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/kcache.patched -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss
         else
-            python3 -m pyimg4 im4p create -i work/kcache.patched -o work/kcache.im4p -f rkrn --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --lzss
         fi
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M
     
@@ -918,7 +943,8 @@ if [ true ]; then
             echo "thank you for use this"
             exit;
         fi
-    
+        touch .downgraded
+
         echo "finished to downgrade now you can boot using  --boot"
     fi
 fi
