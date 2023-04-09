@@ -315,7 +315,7 @@ EOF
   rm -rf /tmp/futurerestore/
   "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
     --rdsk work/rdsk.im4p --rkrn work/krnl.im4p \
-    --latest-sep "$HasBaseband" $ipsw
+    --latest-sep "$HasBaseband" "$ipsw"
 }
 
 _boot() {
@@ -726,28 +726,25 @@ if [ true ]; then
         exit;
 
     fi
-
-        echo "patching kernel ..." # this will send and patch the kernel
-        
-        cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
-        
-        if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin
-        else
-            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
-        fi
-
-        remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw
-        remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios
-        remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/kpf15.ios"
-        remote_cmd "/bin/chmod 755 /mnt1/private/var/root/kpf15.ios"
-        sleep 1
-        
-        if [ ! $(remote_cmd "/mnt1/private/var/root/kpf15.ios /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched") ]; then
-            echo "you have the kernelpath already installed "
-        fi
-
-        remote_cp root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/
+    echo "patching kernel ..." # this will send and patch the kernel
+    
+    cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
+    
+    if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
+        python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin
+    else
+        python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
+    fi
+    remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw
+    remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios
+    remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/kpf15.ios"
+    remote_cmd "/bin/chmod 755 /mnt1/private/var/root/kpf15.ios"
+    sleep 1
+    
+    if [ ! $(remote_cmd "/mnt1/private/var/root/kpf15.ios /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched") ]; then
+        echo "you have the kernelpath already installed "
+    fi
+    remote_cp root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/
 
 
     remote_cmd "/usr/sbin/nvram auto-boot=false"
@@ -928,24 +925,13 @@ if [ true ]; then
             exit;
         fi
         sleep 2
-        echo "executing $dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw"
-        sleep 1
         _runFuturerestore
-        echo -e "\n \n \n \n did the futurerestore gave you a error like ERROR: Unable to send iBSS component: Unable to upload data to device, write (yes) to try again write (no) to exit "
-        read -r answer
-    
-        if [ "$answer" = 'yes' ]; then
-            echo "put your device on dfu mode"
-            "$dir"/gaster pwn
-            echo "running future restore again "
-            _runFuturerestore
-        elif [ "$answer" = 'no' ]; then
-            echo "thank you for use this"
-            exit;
-        fi
+        sleep 2
+        echo -e "\033[1;33mif nothing works just try to run (with sudo or without both) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
         touch .downgraded
 
-        echo "finished to downgrade now you can boot using  --boot"
+
+        echo "if futurerestore restore sucess, you can boot using  --boot"
     fi
 fi
 

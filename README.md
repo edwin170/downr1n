@@ -47,7 +47,9 @@ Example: ./downr1n.sh --downgrade 14.3
 
 # fix some problems to boot
 
-rn not working at all but you can try it 
+- problems with futurerestore so execute manual ./binaries/$(uname)/futurerestore -t blobs/(oneoftheblobs) --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep (only if your device has baseband use it --latest-baseband if not use --no-baseband') ipsw/*.ipsw
+
+- to improve the boot. rn not working at all but you can try it 
 sometimes we have problems like deep sleep or the ios doesnt boot so i add two option for that reason --localboot and --fsboot. both are patchers by palera1n team in order to fix some problems in the boot so you must use it when you will create boot files for example --downgrade () --dont-restore (--localboot) or (--fsboot), when that finish creating that you just have to boot for example --boot (--localboot) or (--fsboot), its not neccessary that you need to use them but if you had some problems you can
 
 # help with something join to discord server https://discord.gg/AjEHs5ug
