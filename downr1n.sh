@@ -42,7 +42,7 @@ remote_cmd() {
 remote_cp() {
     sleep 1
     if [ "$downgrade" ]; then
-        "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 6413' --progress "$@"
+        "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 6413' "$@"
     else
         "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -P6413 $@
     fi
