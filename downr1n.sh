@@ -27,6 +27,7 @@ extractedIpsw="ipsw/extracted/"
 if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git
 fi
+
 if  [ -e .downgraded ]; then
     downgrade=1
 fi
@@ -35,26 +36,31 @@ fi
 # =========
 remote_cmd() {
     sleep 1
-    "$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p6413 root@localhost "$@"
+    "$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "$@"
     sleep 1
 }
 
 remote_cp() {
     sleep 1
     if [ "$downgrade" ]; then
-        "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 6413' "$@"
+        "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 2222' "$@"
     else
-        "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -P6413 $@
+        "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -P2222 $@
     fi
 
     sleep 1
 }
 
 step() {
+    rm -f .entered_dfu
     for i in $(seq "$1" -1 0); do
-        if [ "$(get_device_mode)" = "dfu" ]; then
+        if [[ -e .entered_dfu ]]; then
+            rm -f .entered_dfu
             break
         fi
+        if [[ $(get_device_mode) == "dfu" || ($1 == "10" && $(get_device_mode) != "none") ]]; then
+            touch .entered_dfu
+        fi &
         printf '\r\e[K\e[1;36m%s (%d)' "$2" "$i"
         sleep 1
     done
@@ -81,8 +87,6 @@ Subcommands:
 
 
 
-The iOS version argument should be the iOS version of your device.
-It is required when starting from DFU mode.
 EOF
 }
 
@@ -187,7 +191,8 @@ _reset() {
 
 get_device_mode() {
     if [ "$os" = "Darwin" ]; then
-        apples="$(system_profiler SPUSBDataType 2> /dev/null | grep -B1 'Vendor ID: 0x05ac' | grep 'Product ID:' | cut -dx -f2 | cut -d' ' -f1 | tail -r)"
+        sp="$(system_profiler SPUSBDataType 2> /dev/null)"
+        apples="$(printf '%s' "$sp" | grep -B1 'Vendor ID: 0x05ac' | grep 'Product ID:' | cut -dx -f2 | cut -d' ' -f1 | tail -r)"
     elif [ "$os" = "Linux" ]; then
         apples="$(lsusb | cut -d' ' -f6 | grep '05ac:' | cut -d: -f2)"
     fi
@@ -231,7 +236,7 @@ get_device_mode() {
     if [ "$os" = "Linux" ]; then
         usbserials=$(cat /sys/bus/usb/devices/*/serial)
     elif [ "$os" = "Darwin" ]; then
-        usbserials=$(system_profiler SPUSBDataType 2> /dev/null | grep 'Serial Number' | cut -d: -f2- | sed 's/ //')
+        usbserials=$(printf '%s' "$sp" | grep 'Serial Number' | cut -d: -f2- | sed 's/ //')
     fi
     if grep -qE '(ramdisk tool|SSHRD_Script) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{1,2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}' <<< "$usbserials"; then
         device_mode=ramdisk
@@ -395,7 +400,7 @@ trap _exit_handler EXIT
 # ============
 if [ "$os" = "Linux"  ]; then
     chmod +x getSSHOnLinux.sh
-    sudo bash ./getSSHOnLinux.sh &
+    ./getSSHOnLinux.sh &
 fi
 
 if [ "$os" = 'Linux' ]; then
@@ -477,9 +482,9 @@ if [ "$(get_device_mode)" = "ramdisk" ]; then
     _kill_if_running iproxy
     echo "[*] Rebooting device in SSH Ramdisk"
     if [ "$os" = 'Linux' ]; then
-        sudo "$dir"/iproxy 6413 22 >/dev/null &
+        sudo "$dir"/iproxy 2222 22 >/dev/null &
     else
-        "$dir"/iproxy 6413 22 >/dev/null &
+        "$dir"/iproxy 2222 22 >/dev/null &
     fi
     sleep 2
     remote_cmd "/usr/sbin/nvram auto-boot=false"
@@ -593,16 +598,16 @@ if [ true ]; then
 
     # Execute the commands once the rd is booted
     if [ "$os" = 'Linux' ]; then
-        sudo "$dir"/iproxy 6413 22 >/dev/null &
+        sudo "$dir"/iproxy 2222 22 >/dev/null &
     else
-        "$dir"/iproxy 6413 22 >/dev/null &
+        "$dir"/iproxy 2222 22 >/dev/null &
     fi
 
-    if ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p6413 root@localhost "echo connected" &> /dev/null); then
+    if ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "echo connected" &> /dev/null); then
         echo "[*] Waiting for the ramdisk to finish booting"
     fi
 
-    while ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p6413 root@localhost "echo connected" &> /dev/null); do
+    while ! ("$dir"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "echo connected" &> /dev/null); do
         sleep 1
     done
 
@@ -619,7 +624,7 @@ if [ true ]; then
         echo "[!] Active file does not exist! Please use SSH to create it"
         echo "    /mnt6/active should contain the name of the UUID in /mnt6"
         echo "    When done, type reboot in the SSH session, then rerun the script"
-        echo "    ssh root@localhost -p 6413"
+        echo "    ssh root@localhost -p 2222"
         exit
     fi
     active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
@@ -786,9 +791,9 @@ if [ true ]; then
             "$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
             
             if [ "$os" = 'Darwin' ]; then
-                "$dir"/pzb -g Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache "$ipswurl"
+                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.img4 -M work/IM4M
             else
-                "$dir"/pzb -g Firmware/"$(../binaries/Linux/PlistBuddy BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache "$ipswurl"
+                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M
             fi
             cd ..
         else
@@ -811,7 +816,7 @@ if [ true ]; then
     
 
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
-        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b " -v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
 
 
@@ -924,10 +929,12 @@ if [ true ]; then
             echo "finished creating boot files now you can --boot in order to get boot to the system"
             exit;
         fi
+        echo "don't run this as root or putting sudo. if you did, try again witout sudo"
+        read -p "click enter to continue"
         sleep 2
         _runFuturerestore
         sleep 2
-        echo -e "\033[1;33mif nothing works just try to run (with sudo or without both) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
+        echo -e "\033[1;33mif nothing works just try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
         touch .downgraded
 
 

@@ -5,6 +5,8 @@ downgrade tethered checkm8 idevices ios 14, 15.
 
 download the ipsw and put it into ipsw/ directory
 
+on linux use this without sudo.
+
 Example: ./downr1n.sh --downgrade 14.3 
 
    
@@ -72,11 +74,13 @@ sometimes we have problems like deep sleep or the ios doesnt boot so i add two o
 
 <details><summary>Other credits for tools and codes used in downr1n</summary>
 
+- [futurerestore](https://github.com/futurerestore/futurerestore) thank you for futurerestore.  
+
 - [mineek](https://github.com/mineek/) because sunst0rm
 
 - [exploit](https://github.com/exploit3dguy/) for asrpatcher
 
-- [iSuns9](https://github.com/iSuns9/)
+- [iSuns9](https://github.com/iSuns9/restored_external64patcher) thank you for restored_external64patche
 
 - [Nathan](https://github.com/verygenericname) for the ramdisk
     
