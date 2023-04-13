@@ -16,8 +16,8 @@ echo "[*] Command ran:`if [ $EUID = 0 ]; then echo " sudo"; fi` ./downr1n.sh $@"
 # =========
 # Variables
 # ========= 
-ipsw="ipsw/*.ipsw" # put your ipsw 
-version="1.0"
+ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
+version="2.0"
 os=$(uname)
 dir="$(pwd)/binaries/$os"
 max_args=2
@@ -555,9 +555,9 @@ fi
 cd ..
 
 if [ -a $ipsw ] || [ "${ipsw: -5}" == ".ipsw" ]; then
-  echo "Continuing..."
+  echo "[*] Continuing..."
 else
-  _eexit $ipsw "is not a valid ipsw file."
+  _eexit $ipsw "[-] is not a valid ipsw file."
 fi
 
 if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
@@ -790,7 +790,7 @@ if [ true ]; then
             "$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
             "$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
             
-            if [ "$os" = 'Darwin' ]; then
+            if [ "$os" = "Darwin" ]; then
                 "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.img4 -M work/IM4M
             else
                 "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M
@@ -803,7 +803,7 @@ if [ true ]; then
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             
-            if [ "$os" = 'Darwin' ]; then
+            if [ "$os" = "Darwin" ]; then
                 "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.img4 -M work/IM4M
             else
                 "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M
@@ -830,13 +830,13 @@ if [ true ]; then
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M
     
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            if [ "$os" = 'Darwin' ]; then
+            if [ "$os" = "Darwin" ]; then
                 python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec --extra work/kpp.bin
             else
                 python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec --extra work/kpp.bin
             fi
         else
-            if [ "$os" = 'Darwin' ]; then
+            if [ "$os" = "Darwin" ]; then
                 python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec
             else
                 python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec
@@ -854,20 +854,20 @@ if [ true ]; then
     
         "$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/devicetree.img4 -M work/IM4M -T rdtr
         
-        if [ "$os" = 'Darwin' ]; then
+        if [ "$os" = "Darwin" ]; then
             cp "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" "work/"
         else
             cp "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" "work/"
         fi
     
-        if [ "$os" = 'Darwin' ]; then
+        if [ "$os" = "Darwin" ]; then
             "$dir"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/ramdisk.dmg
         else
             "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o work/ramdisk.dmg
         fi
                 "$dir"/gaster reset
 
-        if [ "$os" = 'Darwin' ]; then
+        if [ "$os" = "Darwin" ]; then
             hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD
             mounted="/tmp/SSHRD"
     
@@ -925,13 +925,17 @@ if [ true ]; then
         sleep 1
         "$dir"/irecovery -f "blobs/"$deviceid"-"$version".shsh2"
 
+        if [ "$os" = "Linux" ]; then
+            sudo ./linux_fix.sh
+            read -p "did you unplug and replug your iDevice? so press [ENTER]"
+        fi
+
         if [ "$dontRestore" = "1" ]; then
-            echo "finished creating boot files now you can --boot in order to get boot to the system"
+            echo "[*] Finished creating boot files now you can --boot in order to get boot to the system"
             exit;
         fi
-        echo "don't run this as root or putting sudo. if you did, try again witout sudo"
-        read -p "click enter to continue"
-        sleep 2
+        
+        echo "[*] Executing futurerestore ..."
         _runFuturerestore
         sleep 2
         echo -e "\033[1;33mif nothing works just try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
