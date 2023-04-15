@@ -25,7 +25,7 @@ arg_count=0
 extractedIpsw="ipsw/extracted/"
 
 if [ ! -d "ramdisk/" ]; then
-    git clone -b dev https://github.com/dualra1n/ramdisk.git
+    git clone -b dev https://github.com/edwin170/ramdisk
 fi
 
 if  [ -e .downgraded ]; then
@@ -580,10 +580,10 @@ if [ true ]; then
     cd ramdisk
     chmod +x sshrd.sh
     echo "[*] Creating ramdisk"
-    ./sshrd.sh 16.0
+    sudo ./sshrd.sh 16.0
 
     echo "[*] Booting ramdisk"
-    ./sshrd.sh boot
+    sudo ./sshrd.sh boot
     cd ..
     # remove special lines from known_hosts
     if [ -f ~/.ssh/known_hosts ]; then
