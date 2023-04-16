@@ -25,7 +25,7 @@ arg_count=0
 extractedIpsw="ipsw/extracted/"
 
 if [ ! -d "ramdisk/" ]; then
-    git clone -b dev https://github.com/dualra1n/ramdisk.git
+    git clone https://github.com/dualra1n/ramdisk.git
 fi
 
 if  [ -e .downgraded ]; then
