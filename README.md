@@ -57,9 +57,9 @@ sometimes we have problems like deep sleep or the ios doesnt boot so i add two o
 # help with something join to discord server https://discord.gg/AjEHs5ug
 # How do i jailbreak it ?
 
-- jailbreak with pogo: ./downr1n --jailbreak (YourVer = 14.3) 
+- jailbreak with dualra1n-loader: ./downr1n --jailbreak (YourVer = 14.3) # this is not a jailbreak. when i said jailbreak i mean the process to install sileo and boostrap the device therefore dualra1n-loader only install sileo and bootstrap with the kernelpatched
 
-- taurine: ./downr1n --jailbreak (YourVer = 14.3) --taurine 
+- taurine: ./downr1n --jailbreak (YourVer = 14.3) --taurine #not recommended
 
 # Credits
 

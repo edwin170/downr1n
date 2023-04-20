@@ -681,30 +681,35 @@ if [ true ]; then
         #"$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kernelcache.img4 -M work/IM4M -T rkrn -P work/kc.bpatch `if [ "$os" = 'Linux' ]; then echo "-J"; fi`
         #remote_cp root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd work/kernelcache.img4
         cp -v "work/kernelcache.img4" "boot/${deviceid}"
+
+        echo "[*] installing dualra1n-loader"
+        unzip other/dualra1n-loader.ipa -d other/
+        mkdir -p other/Payload/Applications/
+        mv -nv other/Payload/dualra1n-loader.app/  other/Payload/Applications/
+        remote_cp other/Payload/Applications/ root@localhost:/mnt1/
         
-        echo "installing pogo in Tips and trollstore on TV"
-        unzip -n other/pogoMod14.ipa -d "other/"
-        remote_cmd "/bin/mkdir -p /mnt1/Applications/Pogo.app && /bin/mkdir -p /mnt1/Applications/trollstore.app" # thank opa you are a tiger xd 
-        echo "copying pogo and trollstore so hang on please ..."
-        remote_cp other/trollstore.app root@localhost:/mnt1/Applications/
-        if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
-            echo "you have to install trollstore in order to intall taurine"
+        echo "[*] Saving snapshot"
+        if [ "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
+            echo "error saving snapshot, SKIPPING ..."
         fi
 
-        remote_cp other/Payload/Pogo.app root@localhost:/mnt1/Applications/
-        echo "it is copying so hang on please "
+        if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
+            echo "[/] error installing trollstore on TV app"
+        fi
+
+        echo "[*] it is copying so hang on please "
         remote_cmd "chmod +x /mnt1/Applications/Pogo.app/Pogo* && /usr/sbin/chown 33 /mnt1/Applications/Pogo.app/Pogo && /bin/chmod 755 /mnt1/Applications/Pogo.app/PogoHelper && /usr/sbin/chown 0 /mnt1/Applications/Pogo.app/PogoHelper" 
 
         if [ "$taurine" = 1 ]; then
             echo "installing taurine"
             remote_cp other/taurine/* root@localhost:/mnt1/
-            echo "finish now it will reboot"
+            echo "[*] finish now it will reboot"
             remote_cmd "/sbin/reboot"
             exit;
         fi
         remote_cp other/Payload/Pogo.app root@localhost:/mnt1/Applications/
-        echo "it is copying so hang on please "
-        remote_cmd "chmod +x /mnt1/Applications/Pogo.app/Pogo* && /usr/sbin/chown 33 /mnt1/Applications/Pogo.app/Pogo && /bin/chmod 755 /mnt1/Applications/Pogo.app/PogoHelper && /usr/sbin/chown 0 /mnt1/Applications/Pogo.app/PogoHelper" 
+        echo "[*] it is copying so hang on please "
+        remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dual* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" 
 
         if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
             echo "you have to install trollstore in order to intall taurine"
@@ -731,7 +736,7 @@ if [ true ]; then
         exit;
 
     fi
-    echo "patching kernel ..." # this will send and patch the kernel
+    echo "[*] Patching kernel ..." # this will send and patch the kernel
     
     cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
     
@@ -756,8 +761,8 @@ if [ true ]; then
     remote_cmd "/sbin/reboot"
     sleep 12
     if [ "$(get_device_mode)" = "dfu" ]; then
-        echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing button."
-        read -p "click enter if you got force reboot the iphone"
+        echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing the button."
+        read -p "click enter if you got dfu mode on the iphone"
         "$dir"/gaster pwn
     else
         _wait recovery
@@ -768,7 +773,7 @@ if [ true ]; then
 
         
 
-    echo "Patchimg some boot files..."
+    echo "[* ]Patchimg some boot files..."
     if [ "$downgrade" = "1" ]; then
         sleep 1
 
@@ -810,6 +815,7 @@ if [ true ]; then
             fi
         fi
 
+        echo "[*] Finished moving the boot files to work"
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec 
         "$dir"/iBoot64Patcher work/iBSS.dec work/iBSS.patched
         "$dir"/img4 -i work/iBSS.patched -o work/iBSS.img4 -M work/IM4M -A -T ibss
@@ -818,7 +824,6 @@ if [ true ]; then
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
         "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
-
 
         "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -a -b -e `if [ "$fixBoot" = "1" ]; then echo "-s"; fi`
         
@@ -865,8 +870,8 @@ if [ true ]; then
         else
             "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o work/ramdisk.dmg
         fi
-                "$dir"/gaster reset
-
+        
+        echo "[*] Patching the restored_external and asr, and saving them into the ramdisk ..."
         if [ "$os" = "Darwin" ]; then
             hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD
             mounted="/tmp/SSHRD"
@@ -916,7 +921,8 @@ if [ true ]; then
         python3 -m pyimg4 im4p create -i work/ramdisk.dmg -o work/rdsk.im4p -f rdsk
     
         cp -v work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
-    
+
+        echo "[*] Sucess Patching the boot files"
         sleep 1
         
         set +e
