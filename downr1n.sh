@@ -685,36 +685,30 @@ if [ true ]; then
         echo "[*] installing dualra1n-loader"
         unzip other/dualra1n-loader.ipa -d other/
         mkdir -p other/Payload/Applications/
-        mv -nv other/Payload/dualra1n-loader.app/  other/Payload/Applications/
+        mv -nv other/Payload/dualra1n-loader.app  other/Payload/Applications
         remote_cp other/Payload/Applications/ root@localhost:/mnt1/
         
         echo "[*] Saving snapshot"
-        if [ "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
-            echo "error saving snapshot, SKIPPING ..."
+        if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
+            echo "the snapshot are already created, SKIPPING ..."
         fi
 
         if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
             echo "[/] error installing trollstore on TV app"
         fi
 
-        echo "[*] it is copying so hang on please "
-        remote_cmd "chmod +x /mnt1/Applications/Pogo.app/Pogo* && /usr/sbin/chown 33 /mnt1/Applications/Pogo.app/Pogo && /bin/chmod 755 /mnt1/Applications/Pogo.app/PogoHelper && /usr/sbin/chown 0 /mnt1/Applications/Pogo.app/PogoHelper" 
+        echo "[*] Fixing dualra1n-loader"
+        remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" 
 
         if [ "$taurine" = 1 ]; then
             echo "installing taurine"
             remote_cp other/taurine/* root@localhost:/mnt1/
-            echo "[*] finish now it will reboot"
+            echo "[*] Finished, now your downgrade is jailbroken, you can boot it"
             remote_cmd "/sbin/reboot"
             exit;
         fi
-        remote_cp other/Payload/Pogo.app root@localhost:/mnt1/Applications/
-        echo "[*] it is copying so hang on please "
-        remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dual* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" 
 
-        if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
-            echo "you have to install trollstore in order to intall taurine"
-        fi
-        echo "installing palera1n jailbreak, thanks palera1n team"
+        echo "installing JBINIT jailbreak, thanks palera1n"
         echo "[*] Copying files to rootfs"
         remote_cmd "rm -rf /mnt1/jbin /mnt1/.installed_palera1n"
         sleep 1
@@ -736,6 +730,7 @@ if [ true ]; then
         exit;
 
     fi
+    
     echo "[*] Patching kernel ..." # this will send and patch the kernel
     
     cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
