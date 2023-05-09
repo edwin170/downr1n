@@ -698,7 +698,7 @@ if [ true ]; then
         fi
 
         echo "[*] Fixing dualra1n-loader"
-        if [ ! $(remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" ) ]
+        if [ ! $(remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" ) ]; then
             echo "install dualra1n-loader using trollstore or another methods"
         fi
         if [ "$taurine" = 1 ]; then
