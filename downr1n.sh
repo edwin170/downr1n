@@ -685,7 +685,7 @@ if [ true ]; then
         echo "[*] installing dualra1n-loader"
         unzip other/dualra1n-loader.ipa -d other/
         mkdir -p other/Payload/Applications/
-        mv -nv other/Payload/dualra1n-loader.app  other/Payload/Applications
+        mv -nv other/Payload/dualra1n-loader.app  other/Payload/Applications/
         remote_cp other/Payload/Applications/ root@localhost:/mnt1/
         
         echo "[*] Saving snapshot"
@@ -698,8 +698,9 @@ if [ true ]; then
         fi
 
         echo "[*] Fixing dualra1n-loader"
-        remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" 
-
+        if [ ! $(remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" ) ]
+            echo "install dualra1n-loader using trollstore or another methods"
+        fi
         if [ "$taurine" = 1 ]; then
             echo "installing taurine"
             remote_cp other/taurine/* root@localhost:/mnt1/
