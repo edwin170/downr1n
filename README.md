@@ -1,6 +1,8 @@
 # downr1n
 downgrade tethered checkm8 idevices ios 14, 15.
 
+IOS 16 NOT SUPPORTED 
+
 downgrades are shit tbh xd, I mean dualboot is much better option if you have the storage needed.
 # Usage
 
