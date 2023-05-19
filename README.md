@@ -32,11 +32,10 @@ Example: ./downr1n.sh --downgrade 14.3
 ---
 
 # Dependencies
-- A desactivated passcode on A10-A11 
-- unzip, python3
-- Update or Install libimobiledevice-utils, libusbmuxd-tools
-- A IPSW iOS 14-15 
-- a MACOS or LINUX, it's better that you use a mac it's more estable and faster
+- A deactivated passcode on [A10](https://en.wikipedia.org/wiki/Apple_A10#Products_that_include_the_Apple_A10_Fusion) and [A11 devices](https://en.wikipedia.org/wiki/Apple_A11#Products_that_include_the_Apple_A11_Bionic)
+- `unzip`, `python3`, `libimobiledevice-utils`, `libusbmuxd-tools`
+- An `.iPSW` file containing [iOS 14](https://en.wikipedia.org/wiki/IOS_14) or [15](https://en.wikipedia.org/wiki/IOS_15)
+- A device running macOS or a Linux distro (it's recommended to use macOS, as it's likely more stable and faster)
 
 # problems putting the device on pwndfu mode
 
