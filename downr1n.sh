@@ -358,6 +358,24 @@ _boot() {
     fi
 
 
+    checkra1nDir="boot/${deviceid}/checkra1n.img4"
+
+    if [ -f "$checkra1nDir" ]; then
+        "$dir"/irecovery -f "boot/${deviceid}/checkra1n.img4"
+        sleep 1
+        "$dir"/irecovery -c "ramdisk"
+        sleep 1
+    else
+        echo "checkra1n jailbreak isn't installed, so Omitting ..."
+    fi
+
+
+    "$dir"/irecovery -f "boot/${deviceid}/checkra1n.img4"
+    sleep 1 
+
+    "$dir"/irecovery -c "ramdisk"
+    sleep 1
+
     "$dir"/irecovery -f "boot/${deviceid}/devicetree.img4"
     sleep 1 
 
@@ -568,7 +586,10 @@ if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     echo "now the IPSW is extracted"
 fi
 
-
+if [ "$jailbreak" = "1" ]; then
+    cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
+    "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
+fi
 # ============
 # Ramdisk
 # ============
@@ -643,90 +664,37 @@ if [ true ]; then
     echo "Dumpped SHSH"
 
     if [ "$jailbreak" = "1" ]; then
-        echo "patching kernel" # this will send and patch the kernel
-        cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
-        cp  work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" work/kernelcache 
-        
-        if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin
+        echo "[*] Preparing the rdsk of checkra1n"
+        cp other/checkra1n.dmg work/.
+        if [ "$os" = "Darwin" ]; then
+            hdiutil resize -size 210MB work/checkra1n.dmg
         else
-            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
+            "$os"/hfsplus work/checkra1n.dmg grow 210000000 > /dev/null
         fi
+        python3 -m pyimg4 im4p create -i work/checkra1n.dmg -o work/checkra1n.im4p -f rdsk
+        python3 -m pyimg4 img4 create -p work/checkra1n.im4p -m work/IM4M -o work/checkra1n.img4
+
+        echo "[*] Copying the binpack"
+        unzip -n other/binpack.zip -d "other/."
+
+        mv -f "other/rdsk/" "other/binpack"
+
+        remote_cmd "mount_apfs /dev/disk0s1s1 /mnt1"
+        remote_cmd "/bin/mkdir -p /mnt1/binpack"
         
-        remote_cp work/kcache.raw root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw
-        remote_cp boot/"${deviceid}"/kernelcache.img4 "root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache"
-        remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios
-        remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/Kernel15Patcher.ios"
-        remote_cmd "/bin/chmod 755 /mnt1/private/var/root/Kernel15Patcher.ios"
-        sleep 1
-        if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched") ]; then
-            echo "you have the kernelpath already installed "
-        fi
-        sleep 2
-        remote_cp root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/ # that will return the kernelpatcher in order to be patched again and boot with it 
-        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e -b $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi)
-
-        if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss
-        else
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --lzss
-        fi
-
-        remote_cp work/kcache.im4p root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/
-        remote_cmd "img4 -i /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p -o /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache -M /mnt6/$active/System/Library/Caches/apticket.der"
-        remote_cmd "rm -f /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
-        python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M
-
-        #"$dir"/kerneldiff work/kcache.raw work/kcache.patchedB work/kc.bpatch
-        #"$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kernelcache.img4 -M work/IM4M -T rkrn -P work/kc.bpatch `if [ "$os" = 'Linux' ]; then echo "-J"; fi`
-        #remote_cp root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd work/kernelcache.img4
-        cp -v "work/kernelcache.img4" "boot/${deviceid}"
-
-        echo "[*] installing dualra1n-loader"
-        unzip other/dualra1n-loader.ipa -d other/
-        mkdir -p other/Payload/Applications/
-        mv -nv other/Payload/dualra1n-loader.app  other/Payload/Applications/
-        remote_cp other/Payload/Applications/ root@localhost:/mnt1/
+        remote_cp  other/binpack root@localhost:/mnt1/
+        echo "[*] Done!. Got it the binpack is already"
         
-        echo "[*] Saving snapshot"
-        if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
-            echo "the snapshot are already created, SKIPPING ..."
-        fi
+        echo "[*] Adding the rootdev=md0 argument to the iBoot"
 
-        if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
-            echo "[/] error installing trollstore on TV app"
-        fi
-
-        echo "[*] Fixing dualra1n-loader"
-        if [ ! $(remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" ) ]; then
-            echo "install dualra1n-loader using trollstore or another methods"
-        fi
-        if [ "$taurine" = 1 ]; then
-            echo "installing taurine"
-            remote_cp other/taurine/* root@localhost:/mnt1/
-            echo "[*] Finished, now your downgrade is jailbroken, you can boot it"
-            remote_cmd "/sbin/reboot"
-            exit;
-        fi
-
-        echo "installing JBINIT jailbreak, thanks palera1n"
-        echo "[*] Copying files to rootfs"
-        remote_cmd "rm -rf /mnt1/jbin /mnt1/.installed_palera1n"
-        sleep 1
-        remote_cmd "mkdir -p /mnt1/jbin/binpack /mnt1/jbin/loader.app"
-        sleep 1
-
-        # this is the jailbreak of palera1n being installing 
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v rootdev=md0 wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
+        "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
         
-        cp -v other/post.sh other/rootfs/jbin/
-        remote_cp -r other/rootfs/* root@localhost:/mnt1/
-        remote_cmd "ldid -s /mnt1/jbin/launchd /mnt1/jbin/jbloader /mnt1/jbin/jb.dylib"
-        remote_cmd "chmod +rwx /mnt1/jbin/launchd /mnt1/jbin/jbloader /mnt1/jbin/post.sh"
-        remote_cmd "tar -xvf /mnt1/jbin/binpack/binpack.tar -C /mnt1/jbin/binpack/"
-        sleep 1
-        remote_cmd "rm /mnt1/jbin/binpack/binpack.tar"
-        remote_cmd "/usr/sbin/nvram auto-boot=true"
-        echo "[*] DONE ... now reboot and boot again"        
+        echo "[*] Saving the iBoot modified"
+        cp -v work/iBEC.img4 work/checkra1n.img4 "boot/${deviceid}"
+        
+        remote_cmd "/usr/sbin/nvram auto-boot=false"
+        echo "[*] DONE ... now reboot and --boot again"        
         remote_cmd "/sbin/reboot"
         exit;
 
@@ -756,6 +724,7 @@ if [ true ]; then
     remote_cmd "/usr/sbin/nvram auto-boot=false"
     remote_cmd "/sbin/reboot"
     sleep 12
+    
     if [ "$(get_device_mode)" = "dfu" ]; then
         echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing the button."
         read -p "click enter if you got dfu mode on the iphone"
@@ -818,7 +787,7 @@ if [ true ]; then
     
 
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
-        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
 
         "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -a -b -e `if [ "$fixBoot" = "1" ]; then echo "-s"; fi`
@@ -844,7 +813,7 @@ if [ true ]; then
             fi
         fi
         
-        "$dir"/Kernel64Patcher work/kcache.dec work/krnl.patched -a -b -e 
+        "$dir"/Kernel64Patcher work/kcache.dec work/krnl.patched -a -b -e
     
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
             python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p --extra work/kpp.bin -f rkrn --lzss
@@ -890,6 +859,7 @@ if [ true ]; then
             mv work/patched_restored_external $mounted/usr/local/bin/restored_external
     
             hdiutil detach -force /tmp/SSHRD
+            echo "[*] Done!"
         else
     
             "$dir"/hfsplus work/ramdisk.dmg extract /usr/sbin/asr work/asr
@@ -912,6 +882,7 @@ if [ true ]; then
     
             "$dir"/hfsplus work/ramdisk.dmg chmod 100755 /usr/sbin/asr
             "$dir"/hfsplus work/ramdisk.dmg chmod 100755 /usr/local/bin/restored_external
+            echo "[*] Done!"
         fi
     
         python3 -m pyimg4 im4p create -i work/ramdisk.dmg -o work/rdsk.im4p -f rdsk
