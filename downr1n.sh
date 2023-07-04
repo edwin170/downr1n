@@ -686,7 +686,7 @@ if [ true ]; then
         unzip other/dualra1n-loader.ipa -d other/
         mkdir -p other/Payload/Applications/
         mv -nv other/Payload/dualra1n-loader.app  other/Payload/Applications/
-        remote_cp other/Payload/Applications/ root@localhost:/mnt1/
+        remote_cp other/Payload/Applications/ root@localhost:/mnt1/Applications
         
         echo "[*] Saving snapshot"
         if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
