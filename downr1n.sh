@@ -430,10 +430,10 @@ fi
 
 
 # Check for pyimg4
-if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("pyimg4"))'; then
-    echo '[-] pyimg4 not installed. Press any key to install it, or press ctrl + c to cancel'
+if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("fastapi") and not pkgutil.find_loader("aiohttp") and not pkgutil.find_loader("ujson") and not pkgutil.find_loader("wikitextparser") and not pkgutil.find_loader("uvicorn") and not pkgutil.find_loader("pyimg4"))'; then
+    echo '[-] One or more required modules are not installed. Press any key to install them, or press ctrl + c to cancel'
     read -n 1 -s
-    python3 -m pip install pyimg4
+    python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4
 fi
 
 # Update submodules
@@ -552,6 +552,11 @@ if [ "$boot" = "1" ]; then # call boot in order to boot it
     _boot
 fi
 
+if [[ ! "$version" = "13."* ]]; then 
+    kernelpatcher_ios="Kernel15patcher.ios"
+else
+    kernelpatcher_ios="Kernel13patcher.ios"
+fi
 
     # =========
     # extract ipsw 
@@ -670,7 +675,7 @@ if [ true ]; then
         
         remote_cp work/kcache.raw root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw
         remote_cp boot/"${deviceid}"/kernelcache.img4 "root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache"
-        remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios
+        remote_cp binaries/$kernelpatcher_ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios
         remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/Kernel15Patcher.ios"
         remote_cmd "/bin/chmod 755 /mnt1/private/var/root/Kernel15Patcher.ios"
         sleep 1
@@ -781,7 +786,7 @@ done
         python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
     fi
     remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw
-    remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios
+    remote_cp binaries/$kernelpatcher_ios root@localhost:/mnt1/private/var/root/kpf15.ios
     remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/kpf15.ios"
     remote_cmd "/bin/chmod 755 /mnt1/private/var/root/kpf15.ios"
     sleep 1
@@ -960,6 +965,8 @@ done
         echo "[*] Sucess Patching the boot files"
         sleep 1
         
+        echo "[*] Executing wikiproxy.py in order to fix key issue"
+        python3 wikiproxy.py
         set +e
 
         "$dir"/gaster reset
