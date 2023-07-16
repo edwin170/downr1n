@@ -707,6 +707,7 @@ while true; do
             echo "[*] You answered YES. so Activating the iBoot localboot path..."
             "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
             "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
+            cp -v work/iBEC.img4 "boot/${deviceid}"
             break
             ;;
         no)
@@ -964,11 +965,6 @@ done
         "$dir"/gaster reset
         sleep 1
         "$dir"/irecovery -f "blobs/"$deviceid"-"$version".shsh2"
-
-        if [ "$os" = "Linux" ]; then
-            sudo ./linux_fix.sh
-            read -p "did you unplug and replug your iDevice? so press [ENTER]"
-        fi
 
         if [ "$dontRestore" = "1" ]; then
             echo "[*] Finished creating boot files now you can --boot in order to get boot to the system"
