@@ -966,7 +966,12 @@ done
         sleep 1
         
         echo "[*] Executing wikiproxy.py in order to fix key issue"
-        python3 wikiproxy.py
+        
+        if [ ! $(/usr/bin/python3 "wikiproxy.py") ]; then
+            echo "wikiproxy failed, please open another terminal and execute python3 wikiproxy.py, [CLICK ENTER WHEN YOU SUCCESS]"
+            read -n 1 -s
+        fi
+        
         set +e
 
         "$dir"/gaster reset

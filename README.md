@@ -33,6 +33,7 @@ The various command-line options are as follows:
 ---
 
 # Dependencies
+- please exeucte this command: python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4.
 - A disabled passcode on A10 and A11 devices.
 - unzip, python3, libimobiledevice-utils, libusbmuxd-tools.
 - An .iPSW file containing iOS 14 or 15.
@@ -51,6 +52,7 @@ The various command-line options are as follows:
    - irecovery -n
 
 # fix some problems to boot
+- please execute wikiproxy.py manually.
 
 - If you encounter issues with futurerestore, try manually executing: ./binaries/$(uname)/futurerestore -t blobs/(oneoftheblobs) --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep (if your device has a baseband, use --latest-baseband, if not, use --no-baseband') ipsw/*.ipsw.
 
@@ -70,6 +72,8 @@ The various command-line options are as follows:
 # Credits
 
 <details><summary>Other credits for tools and codes used in downr1n</summary>
+
+- [wikiproxy.py](https://github.com/afastaudir8/wikiproxy).
 
 - [futurerestore](https://github.com/futurerestore/futurerestore) thank you for futurerestore.  
 
