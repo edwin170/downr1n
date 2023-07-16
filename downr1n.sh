@@ -662,6 +662,7 @@ if [ true ]; then
         if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched") ]; then
             echo "you have the kernelpath already installed "
         fi
+        
         sleep 2
         remote_cp root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/ # that will return the kernelpatcher in order to be patched again and boot with it 
         "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e -b $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi)
