@@ -958,12 +958,10 @@ done
         echo "[*] Sucess Patching the boot files"
         sleep 1
         
-        echo "[*] Executing wikiproxy.py in order to fix key issue"
+        echo "[*] please execute wikiproxy.py in order to fix key issue"
         
-        if [ ! $(/usr/bin/python3 "wikiproxy.py") ]; then
-            echo "wikiproxy failed, please open another terminal and execute python3 wikiproxy.py, [CLICK ENTER WHEN YOU SUCCESS]"
-            read -n 1 -s
-        fi
+        echo "Please open another terminal and execute: python3 wikiproxy.py, [CLICK ENTER WHEN YOU SUCCESS]"
+        read -n 1 -s
         
         set +e
 
