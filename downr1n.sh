@@ -551,13 +551,6 @@ sleep 2
 if [ "$boot" = "1" ]; then # call boot in order to boot it 
     _boot
 fi
-
-if [[ ! "$version" = "13."* ]]; then 
-    kernelpatcher_ios="Kernel15patcher.ios"
-else
-    kernelpatcher_ios="Kernel13patcher.ios"
-fi
-
     # =========
     # extract ipsw 
     # =========
@@ -675,7 +668,7 @@ if [ true ]; then
         
         remote_cp work/kcache.raw root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw
         remote_cp boot/"${deviceid}"/kernelcache.img4 "root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache"
-        remote_cp binaries/$kernelpatcher_ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios
+        remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios
         remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/Kernel15Patcher.ios"
         remote_cmd "/bin/chmod 755 /mnt1/private/var/root/Kernel15Patcher.ios"
         sleep 1
@@ -786,7 +779,7 @@ done
         python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
     fi
     remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw
-    remote_cp binaries/$kernelpatcher_ios root@localhost:/mnt1/private/var/root/kpf15.ios
+    remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios
     remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/kpf15.ios"
     remote_cmd "/bin/chmod 755 /mnt1/private/var/root/kpf15.ios"
     sleep 1
