@@ -697,28 +697,6 @@ if [ true ]; then
         cp -v "work/kernelcache.img4" "boot/${deviceid}"
         echo "[*] Finished of patching the kernel"
 
-ask
-while true; do
-    read -r answer
-    case "${answer,,}" in
-        yes)
-            echo "[*] You answered YES. so Activating the iBoot localboot path..."
-            "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
-            "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
-            cp -v work/iBEC.img4 "boot/${deviceid}"
-            break
-            ;;
-        no)
-            echo "You answered NO. so Not activating the iBoot localboot path."
-            break
-            ;;
-        *)
-            echo "Invalid answer."
-            usage
-            ;;
-    esac
-done
-
         echo "[*] installing dualra1n-loader"
         unzip other/dualra1n-loader.ipa -d other/
         mkdir -p other/Payload/Applications/
@@ -763,7 +741,30 @@ done
         sleep 1
         remote_cmd "rm /mnt1/jbin/binpack/binpack.tar"
         remote_cmd "/usr/sbin/nvram auto-boot=true"
-        echo "[*] DONE ... now reboot and boot again"        
+        echo "[*] Finished of jailbreaking"
+        ask
+        while true; do
+            read -r answer
+            case "${answer,,}" in
+                yes)
+                    echo "[*] You answered YES. so Activating the iBoot localboot path..."
+                    "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
+                    "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
+                    cp -v work/iBEC.img4 "boot/${deviceid}"
+                    break
+                    ;;
+                no)
+                    echo "You answered NO. so Not activating the iBoot localboot path."
+                    break
+                    ;;
+                *)
+                    echo "Invalid answer."
+                    usage
+                    ;;
+            esac
+        done
+        
+        echo "[*] DONE ... now reboot and boot again"   
         remote_cmd "/sbin/reboot"
         exit;
 
