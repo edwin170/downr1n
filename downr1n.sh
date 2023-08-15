@@ -745,7 +745,7 @@ if [ true ]; then
         ask
         while true; do
             read -r answer
-            case "${answer,,}" in
+            case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
                 yes)
                     echo "[*] You answered YES. so Activating the iBoot localboot path..."
                     "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
