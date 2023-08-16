@@ -681,13 +681,13 @@ if [ true ]; then
         "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e $(if [[ ! "$version" = "15."* ]]; then echo "-b"; else echo "-f"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi)
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --extra work/kpp.bin --lzss
         else
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --lzss
         fi
 
         remote_cp work/kcache.im4p root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/
-        remote_cmd "img4 -i /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p -o /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache -M /mnt6/$active/System/Library/Caches/apticket.der"
+        remote_cmd "img4 -i /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p -o /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd -M /mnt6/$active/System/Library/Caches/apticket.der"
         remote_cmd "rm -f /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M
 
@@ -748,6 +748,14 @@ if [ true ]; then
             case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
                 yes)
                     echo "[*] You answered YES. so Activating the iBoot localboot path..."
+                    
+                     if [ "$os" = 'Linux' ]; then
+                        sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
+                     else
+                        LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
+                        rm *.bak
+                     fi
+            
                     "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
                     "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
                     cp -v work/iBEC.img4 "boot/${deviceid}"
@@ -856,6 +864,14 @@ if [ true ]; then
     
 
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
+        
+        if [ "$os" = 'Linux' ]; then
+            sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
+        else
+            LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
+            rm *.bak
+        fi     
+        
         "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
 
