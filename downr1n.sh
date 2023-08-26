@@ -753,7 +753,6 @@ if [ true ]; then
                         sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
                      else
                         LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
-                        rm *.bak
                      fi
             
                     "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
