@@ -686,8 +686,6 @@ if [ true ]; then
             python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --lzss
         fi
 
-        remote_cp work/kcache.im4p root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/
-        remote_cmd "img4 -i /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p -o /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd -M /mnt6/$active/System/Library/Caches/apticket.der"
         remote_cmd "rm -f /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M
 
@@ -748,6 +746,16 @@ if [ true ]; then
             case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
                 yes)
                     echo "[*] You answered YES. so Activating the iBoot localboot path..."
+                    echo '[*] Patching the kernel to krnl'
+                    if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
+                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --extra work/kpp.bin --lzss
+
+                    else
+                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --lzss
+                    fi
+
+                    python3 -m pyimg4 img4 create -p work/krnl.im4p -o work/kernelcachd -m work/IM4M
+                    remote_cp work/kernelcachd root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/
                     
                      if [ "$os" = 'Linux' ]; then
                         sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
