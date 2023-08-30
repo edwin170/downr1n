@@ -28,17 +28,6 @@ if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git
 fi
 
-if [ ! -e "$os"/futurerestore ]; then
-    if [ "$os" = "Darwin" ]; then
-        curl -sLo https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
-        unzip futurerestore-macOS-RELEASE.zip
-    else if [ "$os" = "Linux" ]; then
-        curl -sLo https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
-        unzip futurerestore-Linux-x86_64-RELEASE.zip
-    mv futurerestore "$dir"/
-    rm -rf futurerestore-*
-fi
-
 if  [ -e .downgraded ]; then
     downgrade=1
 fi
@@ -420,6 +409,20 @@ trap _exit_handler EXIT
 # ============
 # Dependencies
 # ============
+
+# Check if futurerestore exists
+if [ ! -e "$oscheck"/futurerestore ]; then
+    echo "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
+    if [ "$os" = "Darwin" ]; then
+        curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
+        unzip futurerestore-macOS-RELEASE.zip
+    else
+        curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
+        unzip futurerestore-Linux-x86_64-RELEASE.zip
+    fi
+    mv futurerestore "$dir"/
+fi
+
 if [ "$os" = "Linux"  ]; then
     chmod +x getSSHOnLinux.sh
     ./getSSHOnLinux.sh &
