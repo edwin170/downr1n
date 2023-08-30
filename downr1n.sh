@@ -28,7 +28,7 @@ if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git
 fi
 
-if [ ! -e "$oscheck"/futurerestore ]; then
+if [ ! -e "$os"/futurerestore ]; then
     if [ "$os" = "Darwin" ]; then
         curl -sLo https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
         unzip futurerestore-macOS-RELEASE.zip
