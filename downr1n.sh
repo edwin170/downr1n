@@ -28,6 +28,17 @@ if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git
 fi
 
+if [ ! -e "$oscheck"/futurerestore ]; then
+    if [ "$os" = "Darwin" ]; then
+        curl -sLo https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
+        unzip futurerestore-macOS-RELEASE.zip
+    else if [ "$os" = "Linux" ]; then
+        curl -sLo https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
+        unzip futurerestore-Linux-x86_64-RELEASE.zip
+    mv futurerestore "$os"/
+    rm -rf futurerestore-*
+fi
+
 if  [ -e .downgraded ]; then
     downgrade=1
 fi
