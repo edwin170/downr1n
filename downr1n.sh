@@ -35,7 +35,7 @@ if [ ! -e "$os"/futurerestore ]; then
     else if [ "$os" = "Linux" ]; then
         curl -sLo https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
         unzip futurerestore-Linux-x86_64-RELEASE.zip
-    mv futurerestore "$os"/
+    mv futurerestore "$dir"/
     rm -rf futurerestore-*
 fi
 
