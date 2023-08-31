@@ -410,19 +410,6 @@ trap _exit_handler EXIT
 # Dependencies
 # ============
 
-# Check if futurerestore exists
-if [ ! -e "$oscheck"/futurerestore ]; then
-    echo "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
-    if [ "$os" = "Darwin" ]; then
-        curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
-        unzip futurerestore-macOS-RELEASE.zip
-    else
-        curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
-        unzip futurerestore-Linux-x86_64-RELEASE.zip
-    fi
-    mv futurerestore "$dir"/
-fi
-
 if [ "$os" = "Linux"  ]; then
     chmod +x getSSHOnLinux.sh
     ./getSSHOnLinux.sh &
@@ -432,7 +419,7 @@ if [ "$os" = 'Linux' ]; then
     linux_cmds='lsusb'
 fi
 
-for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep ${linux_cmds}; do
+for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep xz ${linux_cmds}; do
     if ! command -v "${cmd}" > /dev/null; then
         echo "[-] Command '${cmd}' not installed, please install it!";
         cmd_not_found=1
@@ -448,6 +435,22 @@ if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("fastapi") and not
     echo '[-] One or more required modules are not installed. Press any key to install them, or press ctrl + c to cancel'
     read -n 1 -s
     python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4
+fi
+
+# Check if futurerestore exists
+if [ ! -e "$oscheck"/futurerestore ]; then
+    echo "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
+    if [ "$os" = "Darwin" ]; then
+        curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
+        unzip futurerestore-macOS-RELEASE.zip
+        xz -dc futurerestore-*.xz | tar xfv -
+    else
+        curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
+        unzip futurerestore-Linux-x86_64-RELEASE.zip
+        xz -dc futurerestore-*.xz | tar xfv -
+    fi
+    mv futurerestore "$dir"/
+    rm -rf futurerestore-*
 fi
 
 # Update submodules

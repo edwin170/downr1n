@@ -35,7 +35,7 @@ The various command-line options are as follows:
 # Dependencies
 - please exeucte this command: python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4.
 - A disabled passcode on A10 and A11 devices.
-- unzip, python3, libimobiledevice-utils, libusbmuxd-tools.
+- unzip, python3, libimobiledevice-utils, libusbmuxd-tools, xz-utils.
 - An .iPSW file containing iOS 14 or 15.
 - A device running macOS or a Linux distro. It is recommended to use macOS, as it is likely more stable and faster.
 
