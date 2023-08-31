@@ -416,11 +416,13 @@ if [ ! -e "$oscheck"/futurerestore ]; then
     if [ "$os" = "Darwin" ]; then
         curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
         unzip futurerestore-macOS-RELEASE.zip
+        xz -dc futurerestore-*.xz | tar xfv -
     else
         curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
         unzip futurerestore-Linux-x86_64-RELEASE.zip
+        xz -dc futurerestore-*.xz | tar xfv -
+        rm -rf linux_fix.sh
     fi
-    xz -dc futurerestore-*.xz | tar xfv -
     mv futurerestore "$dir"/
 fi
 
