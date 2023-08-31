@@ -438,7 +438,7 @@ if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("fastapi") and not
 fi
 
 # Check if futurerestore exists
-if [ ! -e "$oscheck"/futurerestore ]; then
+if [ ! -e "$dir"/futurerestore ]; then 
     echo "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
     if [ "$os" = "Darwin" ]; then
         curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
@@ -882,6 +882,12 @@ if [ true ]; then
         fi
 
         echo "[*] Finished moving the boot files to work"
+        sleep 2
+        _pwn
+        sleep 2
+        _reset
+        sleep 3
+        
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec 
         "$dir"/iBoot64Patcher work/iBSS.dec work/iBSS.patched
         "$dir"/img4 -i work/iBSS.patched -o work/iBSS.img4 -M work/IM4M -A -T ibss
