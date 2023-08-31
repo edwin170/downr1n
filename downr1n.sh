@@ -435,7 +435,7 @@ if [ "$os" = 'Linux' ]; then
     linux_cmds='lsusb'
 fi
 
-for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep ${linux_cmds}; do
+for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep xz${linux_cmds}; do
     if ! command -v "${cmd}" > /dev/null; then
         echo "[-] Command '${cmd}' not installed, please install it!";
         cmd_not_found=1
