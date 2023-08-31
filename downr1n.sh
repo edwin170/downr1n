@@ -451,6 +451,7 @@ if [ ! -e "$oscheck"/futurerestore ]; then
         rm -rf linux_fix.sh
     fi
     mv futurerestore "$dir"/
+    rm -rf futurerestore-*
 fi
 
 # Update submodules
