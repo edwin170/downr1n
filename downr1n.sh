@@ -455,12 +455,6 @@ if [ ! -e "$dir"/futurerestore ]; then
     mv futurerestore "$dir"/
     rm -rf futurerestore-*
 fi
-
-if [ ! -e ipsw/*.ipsw ]; then 
-    echo "[*] Downloading ipsw"
-    aria2c -x16 -s16 -j16 "$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$1'")' | "$dir"/jq -s '.[0] | .url' --raw-output)"
-    mv *.ipsw ipsw
-fi
     
 ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 
@@ -565,6 +559,11 @@ fi
 
 ipswurl=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$version'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
 
+if [ ! -e ipsw/*.ipsw ]; then 
+    echo "[*] Downloading ipsw, it may take few minutes."
+    aria2c -x16 -s16 -j16 "$ipswurl"
+    mv *.ipsw ipsw
+fi
 
 # Have the user put the device into DFU
 if [ "$(get_device_mode)" != "dfu" ]; then
