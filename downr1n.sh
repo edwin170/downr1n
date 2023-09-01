@@ -25,6 +25,7 @@ max_args=2
 arg_count=0
 extractedIpsw="ipsw/extracted/"
 deviceid=$("$dir"/irecovery -q | grep PRODUCT | sed 's/PRODUCT: //')
+chmod +x "$dir"/*
 
 if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git --depth=1
