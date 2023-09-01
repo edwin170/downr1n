@@ -13,20 +13,29 @@ cd ..
 
 echo "[*] Command ran:`if [ $EUID = 0 ]; then echo " sudo"; fi` ./downr1n.sh $@"
 
+
+
 # =========
 # Variables
 # ========= 
-ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 version="2.0"
 os=$(uname)
 dir="$(pwd)/binaries/$os"
 max_args=2
 arg_count=0
 extractedIpsw="ipsw/extracted/"
+deviceid=$("$dir"/irecovery -q | grep PRODUCT | sed 's/PRODUCT: //')
 
 if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git
 fi
+
+if [ ! -e ipsw/*.ipsw ]; then 
+    "$dir"/aria2c -x16 -s16 -j16 "$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$1'")' | "$dir"/jq -s '.[0] | .url' --raw-output)"
+    mv *.ipsw ipsw
+fi
+    
+ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 
 if  [ -e .downgraded ]; then
     downgrade=1
