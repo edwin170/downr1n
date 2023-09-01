@@ -32,6 +32,7 @@ if [ ! -d "ramdisk/" ]; then
 fi
 
 if [ ! -e ipsw/*.ipsw ]; then 
+    echo "[*] Downloading ipsw"
     "$dir"/aria2c -x16 -s16 -j16 "$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$1'")' | "$dir"/jq -s '.[0] | .url' --raw-output)"
     mv *.ipsw ipsw
 fi
