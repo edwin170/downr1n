@@ -558,13 +558,6 @@ fi
 
 ipswurl=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$version'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
 
-if [ ! -e ipsw/*.ipsw ]; then 
-    echo "[*] Downloading ipsw, it may take few minutes."
-    aria2c -x16 -s16 -j16 "$ipswurl"
-    mv *.ipsw ipsw
-fi
-
-ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 
 # Have the user put the device into DFU
 if [ "$(get_device_mode)" != "dfu" ]; then
@@ -583,6 +576,16 @@ fi
     # =========
     # extract ipsw 
     # =========
+
+if [ ! -e ipsw/*.ipsw ]; then 
+    echo "[*] Downloading ipsw, it may take few minutes."
+    aria2c -x16 -s16 -j16 "$ipswurl"
+    mv *.ipsw ipsw
+fi
+
+ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
+
+    
 cd ipsw/
 ipsw_files=(*.ipsw)
 if [[ ${#ipsw_files[@]} -gt 1 ]]; then
