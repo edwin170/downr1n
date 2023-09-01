@@ -456,7 +456,6 @@ if [ ! -e "$dir"/futurerestore ]; then
     rm -rf futurerestore-*
 fi
     
-ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 
 
 # Update submodules
@@ -564,6 +563,8 @@ if [ ! -e ipsw/*.ipsw ]; then
     aria2c -x16 -s16 -j16 "$ipswurl"
     mv *.ipsw ipsw
 fi
+
+ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 
 # Have the user put the device into DFU
 if [ "$(get_device_mode)" != "dfu" ]; then
