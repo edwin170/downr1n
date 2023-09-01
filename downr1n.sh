@@ -27,7 +27,7 @@ extractedIpsw="ipsw/extracted/"
 deviceid=$("$dir"/irecovery -q | grep PRODUCT | sed 's/PRODUCT: //')
 
 if [ ! -d "ramdisk/" ]; then
-    git clone https://github.com/dualra1n/ramdisk.git
+    git clone https://github.com/dualra1n/ramdisk.git --depth=1
 fi
 
 if [ ! -e ipsw/*.ipsw ]; then 
