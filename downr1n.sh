@@ -13,10 +13,11 @@ cd ..
 
 echo "[*] Command ran:`if [ $EUID = 0 ]; then echo " sudo"; fi` ./downr1n.sh $@"
 
+
+
 # =========
 # Variables
 # ========= 
-ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 version="2.0"
 os=$(uname)
 dir="$(pwd)/binaries/$os"
@@ -25,7 +26,7 @@ arg_count=0
 extractedIpsw="ipsw/extracted/"
 
 if [ ! -d "ramdisk/" ]; then
-    git clone https://github.com/dualra1n/ramdisk.git
+    git clone https://github.com/dualra1n/ramdisk.git --depth 1
 fi
 
 if  [ -e .downgraded ]; then
@@ -419,7 +420,7 @@ if [ "$os" = 'Linux' ]; then
     linux_cmds='lsusb'
 fi
 
-for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep xz ${linux_cmds}; do
+for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep xz aria2c ${linux_cmds}; do
     if ! command -v "${cmd}" > /dev/null; then
         echo "[-] Command '${cmd}' not installed, please install it!";
         cmd_not_found=1
@@ -452,6 +453,8 @@ if [ ! -e "$dir"/futurerestore ]; then
     mv futurerestore "$dir"/
     rm -rf futurerestore-*
 fi
+    
+
 
 # Update submodules
 git submodule update --init --recursive 
@@ -571,6 +574,16 @@ fi
     # =========
     # extract ipsw 
     # =========
+
+if [ ! -e ipsw/*.ipsw ]; then 
+    echo "[*] Downloading ipsw, it may take few minutes."
+    aria2c -x16 -s16 -j16 "$ipswurl"
+    mv *.ipsw ipsw
+fi
+
+ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
+
+    
 cd ipsw/
 ipsw_files=(*.ipsw)
 if [[ ${#ipsw_files[@]} -gt 1 ]]; then
