@@ -29,9 +29,6 @@ if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git --depth 1
 fi
 
-if  [ -e .downgraded ]; then
-    downgrade=1
-fi
 # =========
 # Functions
 # =========
@@ -43,11 +40,7 @@ remote_cmd() {
 
 remote_cp() {
     sleep 1
-    if [ "$downgrade" ]; then
-        "$dir"/sshpass -p 'alpine' rsync -rvz -e 'ssh -p 2222' "$@"
-    else
-        "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -P2222 $@
-    fi
+    "$dir"/sshpass -p 'alpine' scp -r -o StrictHostKeyChecking=no -P2222 $@
 
     sleep 1
 }
@@ -76,11 +69,10 @@ iOS 15 - 14.0 downgrade tool ./downr1n --downgrade 15.7 (the ios of your device)
 Options:
     --downgrade         downgrade tethered your device to ios 14. you can use --localboot or --fsboot in order to fix some problems if you had them 
     --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
-    --jailbreak        jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
-    --taurine          jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
+    --jailbreak         jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
+    --taurine           jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
     --boot              this boot the device.
     --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files
-    --fixBoot           that will boot the device using fsboot
     --debug             Debug the script
 
 Subcommands:
@@ -141,6 +133,9 @@ parse_arg() {
     case "$1" in
         dfuhelper)
             dfuhelper=1
+            ;;
+        clean)
+            clean=1
             ;;
         *)
             version="$1"
@@ -260,6 +255,11 @@ _wait() {
 }
 
 _dfuhelper() {
+    if [ "$(get_device_mode)" = "dfu" ]; then
+        echo "[*] Device already on dfu mode"
+        return;
+    fi
+
     local step_one;
     deviceid=$( [ -z "$deviceid" ] && _info normal ProductType || echo $deviceid )
     if [[ "$1" = 0x801* && "$deviceid" != *"iPad"* ]]; then
@@ -289,8 +289,9 @@ _dfuhelper() {
     if [ "$(get_device_mode)" = "dfu" ]; then
         echo "[*] Device entered DFU!"
     else
-        echo "[-] Device did not enter DFU mode, rerun the script and try again"
-       exit;
+        echo "[-] Device did not enter DFU mode, try again"
+       _detect
+       _dfuhelper
     fi
 }
 
@@ -318,21 +319,59 @@ _kill_if_running() {
 
 
 _runFuturerestore() {
-  cat <<EOF
-===================================================================================================
-#                          WARNING: Starting 'futurerestore' command !
----------------------------------------------------------------------------------------------------
-If futurerestore FAILS, Run '$0 --downgrade' to try again.
----------------------------------------------------------------------------------------------------
-If futurerestore SUCCEEDS, Run '$0 --boot' to boot device.
----------------------------------------------------------------------------------------------------
-===================================================================================================
-EOF
-  read -p "Press ENTER to continue <-"
-  rm -rf /tmp/futurerestore/
-  "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
+    read -p "Press ENTER to continue with futurerestore, your device will start to restoring <-"
+    rm -rf /tmp/futurerestore/
+    "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
     --rdsk work/rdsk.im4p --rkrn work/krnl.im4p \
     --latest-sep "$HasBaseband" "$ipsw"
+}
+
+_detect() {
+    # Get device's iOS version from ideviceinfo if in normal mode
+    echo "[*] Waiting for devices"
+    while [ "$(get_device_mode)" = "none" ]; do
+        sleep 1;
+    done
+    echo $(echo "[*] Detected $(get_device_mode) mode device" | sed 's/dfu/DFU/')
+
+    if grep -E 'pongo|checkra1n_stage2|diag' <<< "$(get_device_mode)"; then
+        echo "[-] Detected device in unsupported mode '$(get_device_mode)'"
+        exit 1;
+    fi
+
+    if [ "$(get_device_mode)" != "normal" ] && [ -z "$version" ] && [ "$dfuhelper" != "1" ]; then
+        echo "[-] You must pass the version your device is on when not starting from normal mode"
+        exit
+    fi
+
+    if [ "$(get_device_mode)" = "ramdisk" ]; then
+        # If a device is in ramdisk mode, perhaps iproxy is still running?
+        _kill_if_running iproxy
+        echo "[*] Rebooting device in SSH Ramdisk"
+        if [ "$os" = 'Linux' ]; then
+            sudo "$dir"/iproxy 2222 22 >/dev/null &
+        else
+            "$dir"/iproxy 2222 22 >/dev/null &
+        fi
+        sleep 1
+        remote_cmd "/sbin/reboot"
+        _kill_if_running iproxy
+        _wait recovery
+    fi
+
+    if [ "$(get_device_mode)" = "normal" ]; then
+        version=${version:-$(_info normal ProductVersion)}
+        arch=$(_info normal CPUArchitecture)
+        if [ "$arch" = "arm64e" ]; then
+            echo "[-] dualboot doesn't, and never will, work on non-checkm8 devices"
+            exit
+        fi
+        echo "Hello, $(_info normal ProductType) on $version!"
+
+        echo "[*] Switching device into recovery mode..."
+        "$dir"/ideviceenterrecovery $(_info normal UniqueDeviceID)
+        _wait recovery
+    fi
 }
 
 _boot() {
@@ -420,7 +459,7 @@ if [ "$os" = 'Linux' ]; then
     linux_cmds='lsusb'
 fi
 
-for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep xz aria2c ${linux_cmds}; do
+for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep xz ${linux_cmds}; do
     if ! command -v "${cmd}" > /dev/null; then
         echo "[-] Command '${cmd}' not installed, please install it!";
         cmd_not_found=1
@@ -429,6 +468,38 @@ done
 if [ "$cmd_not_found" = "1" ]; then
     exit 1
 fi
+
+#echo "[*] Checkin python version, i recommend install a python 10 earlier version to avoid problems"
+#
+#if command -v python3.8 &>/dev/null; then
+#   python3="python3.8"
+#else
+#    python_version=$(python --version 2>&1 | awk '{print $2}')
+#    if [[ $python_version == "3.8" ]]; then
+#       python3="python"
+#    else
+#        echo "Python 3.10 or early is required for this script."
+#        read -p "Python 3.8 is not found. Do you want to install it? (y/n): " install_choice
+#        if [[ $install_choice == "y" ]]; then
+#            if [[ "$os" = "Darwin" ]]; then
+#                brew install python3.8
+#               python3="python3.8"
+#            
+#            elif [ "$os" = "Linux" ]; then
+#
+#                sudo apt-get install python3.8
+#               python3="python3.8"
+#            else
+#                echo "Unsupported operating system. Please install Python 3.8 manually."
+#                exit 1
+#            fi
+#            echo "Python 3.8 has been installed."
+#        else
+#            echo "Python 3.8 was not installed. Using the default 'python' executable. but pyimg4 has problem with python 11"
+#           python3="python"
+#        fi
+#    fi
+#fi
 
 
 # Check for pyimg4
@@ -474,8 +545,8 @@ chmod +x "$dir"/*
 # Start
 # ============
 
-echo "downr1n | Version 1.0"
-echo "Created by edwin, thanks sunst0rm, and all people creator of path file boot"
+echo "downr1n | Version 3.0"
+echo "Created by edwin, thanks palera1, and all people creator of path file boot"
 echo ""
 
 parse_cmdline "$@"
@@ -485,7 +556,7 @@ if [ "$debug" = "1" ]; then
 fi
 
 if [ "$clean" = "1" ]; then
-    rm -rf  work blobs/ boot/"$deviceid"/  ipsw/extracted .downgraded
+    rm -rf  work blobs/ boot/"$deviceid"/  ipsw/extracted
     echo "[*] Removed the created boot files"
     exit
 fi
@@ -534,9 +605,13 @@ if [ "$(get_device_mode)" = "normal" ]; then
     echo "Hello, $(_info normal ProductType) on $version!"
 
     echo "[*] Switching device into recovery mode..."
-    "$dir"/ideviceenterrecovery $(_info normal UniqueDeviceID)
+    if [ ! $("$dir"/ideviceenterrecovery $(_info normal UniqueDeviceID)) ]; then
+        echo "[/] if your device can't enter into recovery mode please try to force reboot and put it on recovery mode"
+    fi
     _wait recovery
 fi
+
+_detect
 
 # Grab more info
 echo "[*] Getting device info..."
@@ -544,9 +619,9 @@ cpid=$(_info recovery CPID)
 model=$(_info recovery MODEL)
 deviceid=$(_info recovery PRODUCT)
 
-echo "$cpid"
-echo "$model"
-echo "$deviceid"
+echo "Detected cpid, your cpid is $cpid"
+echo "Detected model, your model is $model"
+echo "Detected deviceid, your deviceid is $deviceid"
 
 if [ "$dfuhelper" = "1" ]; then
     echo "[*] Running DFU helper"
@@ -575,11 +650,12 @@ fi
     # extract ipsw 
     # =========
 
-if [ ! -e ipsw/*.ipsw ]; then 
-    echo "[*] Downloading ipsw, it may take few minutes."
-    aria2c -x16 -s16 -j16 "$ipswurl"
-    mv *.ipsw ipsw
-fi
+# sasa please update your downloader to use wget
+#if [ ! -e "ipsw/*.ipsw" ]; then 
+#    echo "[*] Downloading ipsw, it may take few minutes."
+#    aria2c -x16 -s16 -j16 "$ipswurl"
+#    mv *.ipsw ipsw
+#fi
 
 ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 
@@ -660,7 +736,7 @@ if [ true ]; then
         HasBaseband='--no-baseband'
     fi
 
-    remote_cmd "/usr/bin/mount_filesystems"
+    remote_cmd "/usr/bin/mount_filesystems 2>/dev/null"
 
     has_active=$(remote_cmd "ls /mnt6/active" 2> /dev/null)
     if [ ! "$has_active" = "/mnt6/active" ]; then
@@ -682,7 +758,7 @@ if [ true ]; then
 
     fi
 
-    "$dir"/img4tool -e -s blobs/"$deviceid"-"$version".shsh2 -m work/IM4M
+    "$dir"/img4tool -e -s blobs/"$deviceid"-"$version".shsh2 -m work/IM4M 2>/dev/null
     echo "Dumpped SHSH"
 
     if [ "$jailbreak" = "1" ]; then
@@ -691,9 +767,9 @@ if [ true ]; then
         cp  work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" work/kernelcache 
         
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin
+            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin 2>/dev/null
         else
-            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
+            python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw 2>/dev/null
         fi
         
         remote_cp work/kcache.raw root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw
@@ -702,18 +778,18 @@ if [ true ]; then
         remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/Kernel15Patcher.ios"
         remote_cmd "/bin/chmod 755 /mnt1/private/var/root/Kernel15Patcher.ios"
         sleep 1
-        if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched") ]; then
+        if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched 2>/dev/null") ]; then
             echo "you have the kernelpath already installed "
         fi
 
         sleep 2
         remote_cp root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/ # that will return the kernelpatcher in order to be patched again and boot with it 
-        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e $(if [[ ! "$version" = "15."* ]]; then echo "-b"; else echo "-f"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi)
+        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e $(if [[ ! "$version" = "15."* ]]; then echo "-b"; else echo "-b15 -r"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi) 2>/dev/null
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --extra work/kpp.bin --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --extra work/kpp.bin --lzss 2>/dev/null
         else
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --lzss 2>/dev/null
         fi
 
         remote_cmd "rm -f /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
@@ -733,7 +809,7 @@ if [ true ]; then
         
         echo "[*] Saving snapshot"
         if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
-            echo "the snapshot are already created, SKIPPING ..."
+            echo "[-] the snapshot are already created, SKIPPING ..."
         fi
 
         if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
@@ -744,6 +820,7 @@ if [ true ]; then
         if [ ! $(remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" ) ]; then
             echo "install dualra1n-loader using trollstore or another methods"
         fi
+
         if [ "$taurine" = 1 ]; then
             echo "installing taurine"
             remote_cp other/taurine/* root@localhost:/mnt1/
@@ -778,14 +855,14 @@ if [ true ]; then
                     echo "[*] You answered YES. so Activating the iBoot localboot path..."
                     echo '[*] Patching the kernel to krnl'
                     if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --extra work/kpp.bin --lzss
+                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --extra work/kpp.bin --lzss 2>/dev/null
 
                     else
-                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --lzss
+                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --lzss 2>/dev/null
                     fi
 
-                    python3 -m pyimg4 img4 create -p work/krnl.im4p -o work/kernelcachd -m work/IM4M
-                    remote_cp work/kernelcachd root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/
+                    python3 -m pyimg4 img4 create -p work/krnl.im4p -o work/kernelcachd -m work/IM4M 2>/dev/null
+                    remote_cp work/kernelcachd root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/ 2>/dev/null
                     
                      if [ "$os" = 'Linux' ]; then
                         sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
@@ -793,8 +870,8 @@ if [ true ]; then
                         LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
                      fi
             
-                    "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l
-                    "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
+                    "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l 2>/dev/null
+                    "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" 2>/dev/null
                     cp -v work/iBEC.img4 "boot/${deviceid}"
                     break
                     ;;
@@ -820,25 +897,26 @@ if [ true ]; then
     cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
     
     if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-        python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin
+        python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw --extra work/kpp.bin 2>/dev/null
     else
-        python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw
+        python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw 2>/dev/null
     fi
-    remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw
-    remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios
+    remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw 2>/dev/null
+    remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios 2>/dev/null
     remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/kpf15.ios"
     remote_cmd "/bin/chmod 755 /mnt1/private/var/root/kpf15.ios"
     sleep 1
     
-    if [ ! $(remote_cmd "/mnt1/private/var/root/kpf15.ios /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched") ]; then
+    if [ ! $(remote_cmd "/mnt1/private/var/root/kpf15.ios /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched 2>/dev/null") ]; then
         echo "you have the kernelpath already installed "
     fi
-    remote_cp root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/
+    remote_cp root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/ 2>/dev/null
 
 
     remote_cmd "/usr/sbin/nvram auto-boot=false"
     remote_cmd "/sbin/reboot"
-    sleep 12
+    sleep 10
+
     if [ "$(get_device_mode)" = "dfu" ]; then
         echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing the button."
         read -p "click enter if you got dfu mode on the iphone"
@@ -852,16 +930,11 @@ if [ true ]; then
 
         
 
-    echo "[* ]Patchimg some boot files..."
+    echo "[* ]Patching some boot files..."
     if [ "$downgrade" = "1" ]; then
         sleep 1
 
-        if [ -e boot/"$deviceid" ]; then
-            rm -rf boot/"$deviceid"
-            mkdir boot/"$deviceid"
-        else
-            mkdir boot/"$deviceid"
-        fi
+        mkdir -p boot/"$deviceid"
 
 
         if [ "$fixBoot" = "1" ]; then # i put it because my friend tested on his ipad and that does not boot so when we download all file from the internet so not extracting ipsw that boot fine idk why 
@@ -888,25 +961,21 @@ if [ true ]; then
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             
             if [ "$os" = "Darwin" ]; then
-                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.img4 -M work/IM4M
+                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.img4 -M work/IM4M 2>/dev/null
             else
-                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M
+                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M 2>/dev/null
             fi
         fi
 
         echo "[*] Finished moving the boot files to work"
         sleep 2
-        _pwn
-        sleep 2
-        _reset
-        sleep 3
         
-        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec 
+        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec 2>/dev/null
         "$dir"/iBoot64Patcher work/iBSS.dec work/iBSS.patched
         "$dir"/img4 -i work/iBSS.patched -o work/iBSS.img4 -M work/IM4M -A -T ibss
     
 
-        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
+        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec 2>/dev/null
         
         if [ "$os" = 'Linux' ]; then
             sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
@@ -914,53 +983,54 @@ if [ true ]; then
             LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
         fi     
         
-        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; elif [ "$fsboot" = "1" ]; then echo "-f"; fi)"
-        "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)"
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; fi)" 2>/dev/null
+        "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" 2>/dev/null
 
-        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -a -e $(if [[ "$version" = "14."* ]]; then echo "-b"; else echo "-f"; fi)  `if [ "$fixBoot" = "1" ]; then echo "-s"; fi`
+        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e $(if [[ "$version" = "14."* ]]; then echo "-b"; else echo "-b15 -r"; fi) 2>/dev/null
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss 2>/dev/null
         else
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --lzss
+            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --lzss 2>/dev/null
         fi
+
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M
     
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
             if [ "$os" = "Darwin" ]; then
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec --extra work/kpp.bin
+                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec --extra work/kpp.bin 2>/dev/null
             else
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec --extra work/kpp.bin
+                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec --extra work/kpp.bin 2>/dev/null
             fi
         else
             if [ "$os" = "Darwin" ]; then
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec
+                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec 2>/dev/null
             else
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec
+                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec 2>/dev/null
             fi
         fi
         
         "$dir"/Kernel64Patcher work/kcache.dec work/krnl.patched -a -b 
     
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p --extra work/kpp.bin -f rkrn --lzss
+            python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p --extra work/kpp.bin -f rkrn --lzss 2>/dev/null
         else
-            python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p -f rkrn --lzss
+            python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p -f rkrn --lzss 2>/dev/null
         fi
     
     
-        "$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/devicetree.img4 -M work/IM4M -T rdtr
+        "$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/devicetree.img4 -M work/IM4M -T rdtr 2>/dev/null
         
         if [ "$os" = "Darwin" ]; then
-            cp "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" "work/"
+            cp "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" "work/" 2>/dev/null
         else
-            cp "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" "work/"
+            cp "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" "work/" 2>/dev/null
         fi
     
         if [ "$os" = "Darwin" ]; then
-            "$dir"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/ramdisk.dmg
+            "$dir"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/ramdisk.dmg 2>/dev/null
         else
-            "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o work/ramdisk.dmg
+            "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o work/ramdisk.dmg 2>/dev/null
         fi
         
         echo "[*] Patching the restored_external and asr, and saving them into the ramdisk ..."
@@ -1017,7 +1087,7 @@ if [ true ]; then
         echo "[*] Sucess Patching the boot files"
         sleep 1
         
-        echo "[*] please execute wikiproxy.py in order to fix key issue"
+        echo "[*] please execute wikiproxy.py in order to fix key issue if you have it"
         
         echo "Please open another terminal and execute: python3 wikiproxy.py, [CLICK ENTER WHEN YOU SUCCESS]"
         read -n 1 -s
@@ -1037,8 +1107,6 @@ if [ true ]; then
         _runFuturerestore
         sleep 2
         echo -e "\033[1;33mif nothing works just try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
-        touch .downgraded
-
 
         echo "if futurerestore restore sucess, you can boot using  --boot"
     fi
