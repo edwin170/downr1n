@@ -469,44 +469,11 @@ if [ "$cmd_not_found" = "1" ]; then
     exit 1
 fi
 
-#echo "[*] Checkin python version, i recommend install a python 10 earlier version to avoid problems"
-#
-#if command -v python3.8 &>/dev/null; then
-#   python3="python3.8"
-#else
-#    python_version=$(python --version 2>&1 | awk '{print $2}')
-#    if [[ $python_version == "3.8" ]]; then
-#       python3="python"
-#    else
-#        echo "Python 3.10 or early is required for this script."
-#        read -p "Python 3.8 is not found. Do you want to install it? (y/n): " install_choice
-#        if [[ $install_choice == "y" ]]; then
-#            if [[ "$os" = "Darwin" ]]; then
-#                brew install python3.8
-#               python3="python3.8"
-#            
-#            elif [ "$os" = "Linux" ]; then
-#
-#                sudo apt-get install python3.8
-#               python3="python3.8"
-#            else
-#                echo "Unsupported operating system. Please install Python 3.8 manually."
-#                exit 1
-#            fi
-#            echo "Python 3.8 has been installed."
-#        else
-#            echo "Python 3.8 was not installed. Using the default 'python' executable. but pyimg4 has problem with python 11"
-#           python3="python"
-#        fi
-#    fi
-#fi
-
-
 # Check for pyimg4
-if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("fastapi") and not pkgutil.find_loader("aiohttp") and not pkgutil.find_loader("ujson") and not pkgutil.find_loader("wikitextparser") and not pkgutil.find_loader("uvicorn") and not pkgutil.find_loader("pyimg4"))'; then
+if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("lzss") and not pkgutil.find_loader("pyliblzfse") and not pkgutil.find_loader("pyimg4"))'; then
     echo '[-] One or more required modules are not installed. Press any key to install them, or press ctrl + c to cancel'
     read -n 1 -s
-    python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4
+    python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4 pyliblzfse lzss
 fi
 
 # Check if futurerestore exists
@@ -651,11 +618,33 @@ fi
     # =========
 
 
-if [ ! -e "ipsw/*.ipsw" ]; then 
-   echo "[*] Downloading ipsw, it may take few minutes."
-   curl -Lo ipsw/$deviceid-$version.ipsw "$ipswurl" "-#"
-fi
-  
+if [ ! -e "ipsw/*.ipsw" ]; then
+    echo "YOU DON'T HAVE AN IPSW SO WE ARE GONNA DOWNLOAD IT, THE IPSW WILL BE for $deviceid AND the version $version, DO YOU WANT TO CHANGE THE VERSION (YES) OR (NO)"
+    while true; do
+        read -r answer
+        case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
+            yes)
+                echo "[*] You answered YES. PLEASE WRITE THE VERSION THAT YOU WANT TO DUALBOOT WITH:"
+                read -r version
+                ipswurl=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$version'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
+                break
+                ;;
+            no)
+                echo "You answered NO. so using the $version."
+                break
+                ;;
+            *)
+                echo "Invalid answer."
+                usage
+                ;;
+        esac
+    done
+    # downloader by @sasa
+    echo "[*] Downloading ipsw, it may take few minutes."
+    curl -Lo ipsw/$deviceid-$version.ipsw "$ipswurl" "-#"
+ fi
+
+    
 cd ipsw/
 ipsw_files=(*.ipsw)
 if [[ ${#ipsw_files[@]} -gt 1 ]]; then
@@ -665,7 +654,7 @@ if [[ ${#ipsw_files[@]} -gt 1 ]]; then
 fi
 cd ..
 
-ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
+ipsw=$(ls ipsw/*.ipsw) # put your ipsw
 
 if [ -a $ipsw ] || [ "${ipsw: -5}" == ".ipsw" ]; then
   echo "[*] Continuing..."
@@ -968,12 +957,14 @@ if [ true ]; then
         echo "[*] Finished moving the boot files to work"
         sleep 2
         
-        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec 2>/dev/null
+        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec
+        
+        sleep 1
         "$dir"/iBoot64Patcher work/iBSS.dec work/iBSS.patched
         "$dir"/img4 -i work/iBSS.patched -o work/iBSS.img4 -M work/IM4M -A -T ibss
-    
-
-        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec 2>/dev/null
+        
+        "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
+        sleep 1
         
         if [ "$os" = 'Linux' ]; then
             sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
@@ -1084,11 +1075,6 @@ if [ true ]; then
 
         echo "[*] Sucess Patching the boot files"
         sleep 1
-        
-        echo "[*] please execute wikiproxy.py in order to fix key issue if you have it"
-        
-        echo "Please open another terminal and execute: python3 wikiproxy.py, [CLICK ENTER WHEN YOU SUCCESS]"
-        read -n 1 -s
         
         set +e
 
