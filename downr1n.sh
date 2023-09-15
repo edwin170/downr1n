@@ -650,16 +650,12 @@ fi
     # extract ipsw 
     # =========
 
-# sasa please update your downloader to use wget
-#if [ ! -e "ipsw/*.ipsw" ]; then 
-#    echo "[*] Downloading ipsw, it may take few minutes."
-#    aria2c -x16 -s16 -j16 "$ipswurl"
-#    mv *.ipsw ipsw
-#fi
 
-ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
-
-    
+if [ ! -e "ipsw/*.ipsw" ]; then 
+   echo "[*] Downloading ipsw, it may take few minutes."
+   curl -Lo ipsw/$deviceid-$version.ipsw "$ipswurl" "-#"
+fi
+  
 cd ipsw/
 ipsw_files=(*.ipsw)
 if [[ ${#ipsw_files[@]} -gt 1 ]]; then
@@ -668,6 +664,8 @@ if [[ ${#ipsw_files[@]} -gt 1 ]]; then
     exit;
 fi
 cd ..
+
+ipsw=$(ls ipsw/*.ipsw) # put your ipsw 
 
 if [ -a $ipsw ] || [ "${ipsw: -5}" == ".ipsw" ]; then
   echo "[*] Continuing..."
