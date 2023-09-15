@@ -1,0 +1,13 @@
+.DS_Store
+*/.DS_Store
+binaries/Linux/futurerestore
+binaries/Darwin/futurerestore
+work
+ramdisk
+boot*
+.irecovery
+blobs
+logs
+.rd_in_progress
+logs
+.disclaimeragree
