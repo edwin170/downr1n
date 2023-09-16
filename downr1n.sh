@@ -17,7 +17,8 @@ echo "[*] Command ran:`if [ $EUID = 0 ]; then echo " sudo"; fi` ./downr1n.sh $@"
 
 # =========
 # Variables
-# ========= 
+# =========
+ipsw="ipsw/*.ipsw" # put your ipsw 
 version="2.0"
 os=$(uname)
 dir="$(pwd)/binaries/$os"
@@ -642,6 +643,7 @@ if [ ! -e "ipsw/*.ipsw" ]; then
     # downloader by @sasa
     echo "[*] Downloading ipsw, it may take few minutes."
     curl -Lo ipsw/$deviceid-$version.ipsw "$ipswurl" "-#"
+    ipsw="ipsw/*.ipsw"
  fi
 
     
@@ -653,8 +655,6 @@ if [[ ${#ipsw_files[@]} -gt 1 ]]; then
     exit;
 fi
 cd ..
-
-ipsw=$(ls ipsw/*.ipsw) # put your ipsw
 
 if [ -a $ipsw ] || [ "${ipsw: -5}" == ".ipsw" ]; then
   echo "[*] Continuing..."
