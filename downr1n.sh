@@ -618,8 +618,8 @@ fi
     # extract ipsw 
     # =========
 
-
-if [ ! -e "ipsw/*.ipsw" ]; then
+# understand my code is more difficult that understand a programing language fr
+if [ ! $(ls ipsw/*.ipsw) ]; then
     echo "YOU DON'T HAVE AN IPSW SO WE ARE GONNA DOWNLOAD IT, THE IPSW WILL BE for $deviceid AND the version $version, DO YOU WANT TO CHANGE THE VERSION (YES) OR (NO)"
     while true; do
         read -r answer
