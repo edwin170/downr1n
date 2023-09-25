@@ -507,6 +507,13 @@ else
     mkdir work
 fi
 
+if [ ! -e "$dir"/gaster ]; then
+    curl -sLO https://nightly.link/verygenericname/gaster/workflows/makefile/main/gaster-"$os".zip
+    unzip gaster-"$os".zip
+    mv gaster "$dir"/
+    rm -rf gaster gaster-"$os".zip
+fi
+
 chmod +x "$dir"/*
 
 # ============
