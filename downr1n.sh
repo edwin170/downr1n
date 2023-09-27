@@ -68,13 +68,14 @@ Usage: $0 [Options] [ subcommand | iOS version which are you]. put your ipsw in 
 iOS 15 - 14.0 downgrade tool ./downr1n --downgrade 15.7 (the ios of your device) ipsw 
 
 Options:
-    --downgrade         downgrade tethered your device to ios 14. you can use --localboot or --fsboot in order to fix some problems if you had them 
-    --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
-    --jailbreak         jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
-    --taurine           jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
-    --boot              this boot the device.
-    --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files
-    --debug             Debug the script
+    --downgrade         Downgrade your device to iOS 14/15 tethered.
+    --dfuhelper         A helper tool to transition A11 devices from recovery mode to DFU mode.
+    --jailbreak         Jailbreak with pogo. Usage: ./downr1n.sh --jailbreak 14.8.
+    --taurine           Jailbreak with taurine. Usage: './downr1n.sh --jailbreak 14.3 --taurine'.
+    --boot              Boots the device.
+    --dont-restore      Avoids using futurerestore, this can be used to only create boot files as opposed to restoring to that version. Example: '--downgrade 14.3 --dont-restore'.
+    --fixBoot           Boots the device using fsboot.
+    --debug             Runs the script in Debug Mode.
 
 Subcommands:
     clean               clean the downgrade tool in order to downgrade again.
@@ -320,7 +321,7 @@ _kill_if_running() {
 
 
 _runFuturerestore() {
-    read -p "Press ENTER to continue with futurerestore, your device will start to restoring <-"
+    read -p "Press ENTER to continue with futurerestore, your device will start restoring <-"
     rm -rf /tmp/futurerestore/
     "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
     --rdsk work/rdsk.im4p --rkrn work/krnl.im4p \
@@ -396,7 +397,7 @@ _boot() {
     
     if [ "$local" = "1" ]; then 
         echo "booting ..."
-        echo "your devicd should be booting into the ios using localboot:)"
+        echo "Your device should now be booting into the iOS using localboot! :)"
         exit;
     fi
 
@@ -521,7 +522,7 @@ chmod +x "$dir"/*
 # ============
 
 echo "downr1n | Version 3.0"
-echo "Created by edwin, thanks palera1, and all people creator of path file boot"
+echo "Created by edwin, thanks palera1n, and all people creator of path file boot"
 echo ""
 
 parse_cmdline "$@"
@@ -574,14 +575,14 @@ if [ "$(get_device_mode)" = "normal" ]; then
     version=${version:-$(_info normal ProductVersion)}
     arch=$(_info normal CPUArchitecture)
     if [ "$arch" = "arm64e" ]; then
-        echo "[-] downgrade doesn't, and never will, work on non-checkm8 devices"
+        echo "[-] Downgrade does not, and will not ever work on non-checkm8 devices."
         exit
     fi
     echo "Hello, $(_info normal ProductType) on $version!"
 
     echo "[*] Switching device into recovery mode..."
     if [ ! $("$dir"/ideviceenterrecovery $(_info normal UniqueDeviceID)) ]; then
-        echo "[/] if your device can't enter into recovery mode please try to force reboot and put it on recovery mode"
+        echo "[/] If your device can't enter into recovery mode, please try to force reboot it and put it into recovery mode."
     fi
     _wait recovery
 fi
@@ -611,7 +612,7 @@ ipswurl=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/
 if [ "$(get_device_mode)" != "dfu" ]; then
     recovery_fix_auto_boot;
     _dfuhelper "$cpid" || {
-        echo "[-] failed to enter DFU mode, run downr1n.sh again"
+        echo "[-] Failed to enter DFU mode, run downr1n.sh again"
         exit -1
     }
 fi
@@ -657,7 +658,7 @@ if [ ! $(ls ipsw/*.ipsw) ]; then
 cd ipsw/
 ipsw_files=(*.ipsw)
 if [[ ${#ipsw_files[@]} -gt 1 ]]; then
-    echo "in ipsw/ directory there is more than one ipsw so delete one and try again please"
+    echo "There is more than one IPSW file in the IPSW directory. Please make sure there is only one and then try again!"
     cd ..
     exit;
 fi
@@ -674,7 +675,7 @@ if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     echo "[*] Extracting ipsw, hang on please ..." # this will extract the ipsw into ipsw/extracted
     unzip -n $ipsw -d "ipsw/extracted" >/dev/null
     cp -v "$extractedIpsw/BuildManifest.plist" work/
-    echo "[*] Got extract the IPSW successfully"
+    echo "[*] The IPSW has been successfully extracted."
 fi
 
 if [ "$jailbreak" = "1" ]; then
@@ -794,7 +795,7 @@ if [ true ]; then
         #"$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kernelcache.img4 -M work/IM4M -T rkrn -P work/kc.bpatch `if [ "$os" = 'Linux' ]; then echo "-J"; fi`
         #remote_cp root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd work/kernelcache.img4
         cp -v "work/kernelcache.img4" "boot/${deviceid}"
-        echo "[*] Finished of patching the kernel"
+        echo "[*] Finished patching the kernel"
 
         echo "[*] installing dualra1n-loader"
         unzip other/dualra1n-loader.ipa -d other/
@@ -804,11 +805,11 @@ if [ true ]; then
         
         echo "[*] Saving snapshot"
         if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
-            echo "[-] the snapshot are already created, SKIPPING ..."
+            echo "[-] The snapshot is already created, SKIPPING ..."
         fi
 
         if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
-            echo "[/] error installing trollstore on TV app"
+            echo "[/] An error occured while installing TrollStore to the TV app."
         fi
 
         echo "[*] Fixing dualra1n-loader"
@@ -817,7 +818,7 @@ if [ true ]; then
         fi
 
         if [ "$taurine" = 1 ]; then
-            echo "installing taurine"
+            echo "Installing taurine"
             remote_cp other/taurine/* root@localhost:/mnt1/
             echo "[*] Finished, now your downgrade is jailbroken, you can boot it"
             remote_cmd "/sbin/reboot"
@@ -914,8 +915,8 @@ if [ true ]; then
     sleep 10
 
     if [ "$(get_device_mode)" = "dfu" ]; then
-        echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing the button."
-        read -p "click enter if you got dfu mode on the iphone"
+        echo "The device is in a false dfu mode. Please force reboot and try to put it on dfu mode by pressing the buttons"
+        read -p "Press enter if you got dfu mode on the iphone"
         "$dir"/gaster pwn
     else
         _wait recovery
@@ -1086,7 +1087,7 @@ if [ true ]; then
     
         cp -v work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
 
-        echo "[*] Sucess Patching the boot files"
+        echo "[*] Successfully patched the boot files"
         sleep 1
         
         set +e

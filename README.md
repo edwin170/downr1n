@@ -1,20 +1,22 @@
 # downr1n
-Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 14 and 15.
+Downr1n enables tethered downgrades of checkm8 compatible iOS devices to iOS 14 and 15.
 
-NOTE: iOS 16 is NOT SUPPORTED.
+NOTE: If your **MAIN** iOS is 16 or 17, YOU WILL **NOT** BE ABLE TO USE THIS SCRIPT.
 
-In general, dual booting is a better option than downgrading if you have the necessary storage. if you activate the localboot path it would be ultra better believe me xd.
+In general, you should aim to dual boot as oppoosed to dual booting. It's a far better option if you have the storage space.
 
 # Usage
-1: Download the IPSW file and place it in the ipsw/ directory.
+1: Download an IPSW file for the version you want and put it in the IPSW/ directory. You can find IPSW links [here](https://ipsw.me/).
 
-2: Execute the script without using 'sudo' on Linux. if it doesn't work please use sudo then.
+2a: If you are on linux, run the script without sudo. However, if you run into issues, give sudo a try.
+
+2b: Run ./downr1n.sh --downgrade [YOURVERSIONHERE]
 
 Example: ./downr1n.sh --downgrade 14.3
 
 The various command-line options are as follows:
 
-      --downgrade        : Downgrade your device to iOS 14 tethered.
+      --downgrade        : Downgrade your device to iOS 14/15 tethered.
 
       --dfuhelper        : A helper tool to transition A11 devices from recovery mode to DFU mode.
 
@@ -22,13 +24,13 @@ The various command-line options are as follows:
 
       --taurine          : Jailbreak with taurine. Usage: `./downr1n.sh --jailbreak 14.3 --taurine`.
 
-      --boot             : Boot the device.
+      --boot             : Boots the device.
 
-      --dont-restore     : Avoids using futurerestore, this can be used to only create boot files. Example: `--downgrade 14.3 --dont-restore`.
+      --dont-restore     : Avoids using futurerestore, this can be used to only create boot files as opposed to restoring to that version. Example: `--downgrade 14.3 --dont-restore`.
 
       --fixBoot          : Boots the device using fsboot.
 
-      --debug            : Debug the script.
+      --debug            : Runs the script in Debug Mode.
 
 ---
 
@@ -41,9 +43,9 @@ The various command-line options are as follows:
 
 # Issues Putting Device in PwnDFU Mode
 
-- A DFU mode exists where the device's screen is black. However, when downgrading the device, recovery mode also turns black. To put the device into PwnDFU mode, you need to put it into real DFU mode by pressing poweroff+(volume down or home button). Look for a tutorial on YouTube to understand how. Once in PwnDFU mode, execute ./binaries/$(uname)/gaster pwn to succeed. If the device is not in DFU mode, it will loop.
+- A DFU mode exists where the device's screen is black. However, when downgrading the device, recovery mode also turns black. To put the device into PwnDFU mode, you need to put it into real DFU mode by pressing poweroff+(volume down or home button). Look for a tutorial on YouTube to understand how. Once in PwnDFU mode, execute ./binaries/$(uname)/gaster pwn to succeed. If the device is not in DFU mode, it will boot loop.
 
-- If you want to fix recovery mode, try copying the firmware/all_flash/* from an IPSW of the version you are or were on before the downgrade to the IPSW for the iOS that you want to downgrade. This should restore recovery mode.
+- If you want to fix recovery mode, try copying the firmware/all_flash/* from an IPSW of the version you are or were on before the downgrade to the IPSW for the iOS that you want to downgrade. This should restore recovery mode to a working state.
 
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
@@ -56,7 +58,7 @@ The various command-line options are as follows:
 
 - If you encounter issues with futurerestore, try manually executing: ./binaries/$(uname)/futurerestore -t blobs/(oneoftheblobs) --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep (if your device has a baseband, use --latest-baseband, if not, use --no-baseband') ipsw/*.ipsw.
 
-- remember if you will use the next command or will activate localboot it is better that you first downgrade and when you success you can use --jailbreak to jailbreak the device and it will ask you to activate localboot path. why do this because the localboot need to be executed after --jailbreak
+- Remember, if you use the next command or activate localboot, it would be better to downgrade normally first and then use --jailbreak to jailbreak the device and activate the localboot path. The localboot path sometimes needs to be activated **after** --jailbreak.
 - Sometimes, issues such as deep sleep or iOS not booting occur. To mitigate this, two options --localboot and --fsboot were added. Both are patches by the palera1n team meant to fix boot problems. You should use them when creating boot files, for example --downgrade () --dont-restore (--localboot) or (--fsboot). After finishing, boot with --boot (--localboot) or (--fsboot). It's not necessary to use them, but if you encounter problems, you can.
 
 # Need Help?
@@ -65,7 +67,7 @@ The various command-line options are as follows:
 # How to Jailbreak?
 - Jailbreak with dualra1n-loader: ./downr1n --jailbreak (YourVer = 14.3). Note: this does not actually jailbreak the device. When I say "jailbreak," I'm referring to the process of installing Sileo and bootstrapping the device. Dualra1n-loader only installs Sileo and bootstraps with the kernel patch.
 
-- Taurine: ./downr1n --jailbreak (YourVer = 14.3) --taurine. Note: this is not recommended.
+- Taurine: ./downr1n --jailbreak (YourVer = 14.3) --taurine. Note: this is **not** recommended.
 
 # This project was created with love by Edwin :)
 
