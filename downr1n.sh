@@ -296,6 +296,45 @@ _dfuhelper() {
     fi
 }
 
+_do_localboot() {
+    ask
+    while true; do
+        read -r answer
+        case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
+            yes)
+                echo "[*] You answered YES. so Activating the iBoot localboot path..."
+                echo '[*] Patching the kernel to krnl'
+                if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
+                    python3 -m pyimg4 im4p create -i work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)  -o work/krnl.im4p -f krnl --extra work/kpp.bin --lzss >/dev/null
+                else
+                    python3 -m pyimg4 im4p create -i work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)  -o work/krnl.im4p -f krnl --lzss >/dev/null
+                fi
+                python3 -m pyimg4 img4 create -p work/krnl.im4p -o work/kernelcachd -m work/IM4M >/dev/null
+                remote_cp work/kernelcachd root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/ >/dev/null
+                
+                 if [ "$os" = 'Linux' ]; then
+                    sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
+                 else
+                    LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
+                 fi
+        
+                "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l >/dev/null
+                "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
+                cp -v work/iBEC.img4 "boot/${deviceid}"
+                break
+                ;;
+            no)
+                echo "You answered NO. so Not activating the iBoot localboot path."
+                break
+                ;;
+            *)
+                echo "Invalid answer."
+                usage
+                ;;
+        esac
+    done
+}
+
 usage() {
     echo "Please answer with YES or NO (case-insensitive)."
 }
@@ -767,24 +806,26 @@ if [ true ]; then
             python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw >/dev/null
         fi
         
-        remote_cp work/kcache.raw root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw >/dev/null
-        remote_cp boot/"${deviceid}"/kernelcache.img4 "root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache" >/dev/null
+        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched -e $(if [[ ! "$version" = "15."* ]]; then echo "-b"; else echo "-b15 -r"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi) >/dev/null
+
+
+        remote_cp work/kcache.patched root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched >/dev/null
+        #remote_cp boot/"${deviceid}"/kernelcache.img4 "root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache" >/dev/null
         remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios >/dev/null
         remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/Kernel15Patcher.ios"
         remote_cmd "/bin/chmod 755 /mnt1/private/var/root/Kernel15Patcher.ios"
         sleep 1
-        if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched  2>/dev/null") ]; then
+        if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patchedB  2>/dev/null") ]; then
             echo "you have the kernelpath already installed "
         fi
 
         sleep 2
-        remote_cp root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/ # that will return the kernelpatcher in order to be patched again and boot with it 
-        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e $(if [[ ! "$version" = "15."* ]]; then echo "-b"; else echo "-b15 -r"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi) >/dev/null
+        remote_cp root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/kcache.patchedB work/ # that will return the kernelpatcher in order to be patched again and boot with it 
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --extra work/kpp.bin --lzss >/dev/null
+            python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rknl --extra work/kpp.bin --lzss >/dev/null
         else
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rknl --lzss >/dev/null
+            python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rknl --lzss >/dev/null
         fi
 
         remote_cmd "rm -f /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
@@ -800,7 +841,7 @@ if [ true ]; then
         unzip other/dualra1n-loader.ipa -d other/
         mkdir -p other/Payload/Applications/
         mv -nv other/Payload/dualra1n-loader.app  other/Payload/Applications/
-        remote_cp other/Payload/Applications/ root@localhost:/mnt1/Applications
+        remote_cp other/Payload/ root@localhost:/mnt1/
         
         echo "[*] Saving snapshot"
         if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
@@ -819,6 +860,8 @@ if [ true ]; then
         if [ "$taurine" = 1 ]; then
             echo "installing taurine"
             remote_cp other/taurine/* root@localhost:/mnt1/
+            echo "[*] Taurine sucessfully copied"
+            _do_localboot
             echo "[*] Finished, now your downgrade is jailbroken, you can boot it"
             remote_cmd "/sbin/reboot"
             exit;
@@ -842,45 +885,7 @@ if [ true ]; then
         remote_cmd "rm /mnt1/jbin/binpack/binpack.tar"
         remote_cmd "/usr/sbin/nvram auto-boot=true"
         echo "[*] Finished of jailbreaking"
-        ask
-        while true; do
-            read -r answer
-            case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
-                yes)
-                    echo "[*] You answered YES. so Activating the iBoot localboot path..."
-                    echo '[*] Patching the kernel to krnl'
-                    if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --extra work/kpp.bin --lzss >/dev/null
-
-                    else
-                        python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/krnl.im4p -f krnl --lzss >/dev/null
-                    fi
-
-                    python3 -m pyimg4 img4 create -p work/krnl.im4p -o work/kernelcachd -m work/IM4M >/dev/null
-                    remote_cp work/kernelcachd root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/ >/dev/null
-                    
-                     if [ "$os" = 'Linux' ]; then
-                        sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
-                     else
-                        LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
-                     fi
-            
-                    "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l >/dev/null
-                    "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
-                    cp -v work/iBEC.img4 "boot/${deviceid}"
-                    break
-                    ;;
-                no)
-                    echo "You answered NO. so Not activating the iBoot localboot path."
-                    break
-                    ;;
-                *)
-                    echo "Invalid answer."
-                    usage
-                    ;;
-            esac
-        done
-        
+        _do_localboot        
         echo "[*] DONE ... now reboot and boot again"   
         remote_cmd "/sbin/reboot"
         exit;
