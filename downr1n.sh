@@ -732,7 +732,7 @@ if [ true ]; then
     cd ramdisk
     chmod +x sshrd.sh
     echo "[*] Creating ramdisk"
-    ./sshrd.sh 15.6 
+    ./sshrd.sh "15.6"
 
     echo "[*] Booting ramdisk"
     ./sshrd.sh boot
@@ -1003,21 +1003,7 @@ if [ true ]; then
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M >/dev/null
 
         echo "[*] Patching the kernel to restore using futurerestore"
-        if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            if [ "$os" = "Darwin" ]; then
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec --extra work/kpp.bin >/dev/null
-            else
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec --extra work/kpp.bin >/dev/null
-            fi
-        else
-            if [ "$os" = "Darwin" ]; then
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreKernelCache"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/kcache.dec >/dev/null
-            else
-                python3 -m pyimg4 im4p extract -i "$extractedIpsw$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreKernelCache:Info:Path" | sed 's/"//g')" -o work/kcache.dec >/dev/null
-            fi
-        fi
-        
-        "$dir"/Kernel64Patcher work/kcache.dec work/krnl.patched -a -b  >/dev/null
+        "$dir"/Kernel64Patcher work/kcache.raw work/krnl.patched -a -b >/dev/null
     
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
             python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p --extra work/kpp.bin -f rkrn --lzss >/dev/null
@@ -1108,7 +1094,7 @@ if [ true ]; then
         echo "[*] Executing futurerestore ..."
         _runFuturerestore
         sleep 2
-        echo -e "\033[1;33mif nothing works just try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
+        echo -e "\033[1;33mif futurerestore didn't finish succesfully please try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
 
         echo "if futurerestore restore sucess, you can boot using  --boot"
     fi
