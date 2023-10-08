@@ -43,7 +43,7 @@ The various command-line options are as follows:
 
 - A DFU mode exists where the device's screen is black. However, when downgrading the device, recovery mode also turns black. To put the device into PwnDFU mode, you need to put it into real DFU mode by pressing poweroff+(volume down or home button). Look for a tutorial on YouTube to understand how. Once in PwnDFU mode, execute ./binaries/$(uname)/gaster pwn to succeed. If the device is not in DFU mode, it will loop.
 
-- If you want to fix recovery mode, try copying the firmware/all_flash/* from an IPSW of the version you are or were on before the downgrade to the IPSW for the iOS that you want to downgrade. This should restore recovery mode.
+- If you want to fix recovery mode, try copying the firmware/all_flash/ iboot and llb files from an IPSW of the version you are or were on before the downgrade to the IPSW for the iOS that you want to downgrade. This should restore recovery mode.
 
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
@@ -52,12 +52,9 @@ The various command-line options are as follows:
    - irecovery -n
 
 # fix some problems to boot
-- please execute wikiproxy.py manually.
-
-- If you encounter issues with futurerestore, try manually executing: ./binaries/$(uname)/futurerestore -t blobs/(oneoftheblobs) --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep (if your device has a baseband, use --latest-baseband, if not, use --no-baseband') ipsw/*.ipsw.
+- please execute wikiproxy.py manually if it gives problem with server key.
 
 - remember if you will use the next command or will activate localboot it is better that you first downgrade and when you success you can use --jailbreak to jailbreak the device and it will ask you to activate localboot path. why do this because the localboot need to be executed after --jailbreak
-- Sometimes, issues such as deep sleep or iOS not booting occur. To mitigate this, two options --localboot and --fsboot were added. Both are patches by the palera1n team meant to fix boot problems. You should use them when creating boot files, for example --downgrade () --dont-restore (--localboot) or (--fsboot). After finishing, boot with --boot (--localboot) or (--fsboot). It's not necessary to use them, but if you encounter problems, you can.
 
 # Need Help?
 - Join our discord server: https://discord.gg/AjEHs5ug
