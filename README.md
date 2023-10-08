@@ -45,6 +45,14 @@ The various command-line options are as follows:
 
 - If you want to fix recovery mode, try copying the firmware/all_flash/ iboot and llb files from an IPSW of the version you are or were on before the downgrade to the IPSW for the iOS that you want to downgrade. This should restore recovery mode.
 
+<details><summary>didn't understand ?</summary>
+
+alright if you didn't understand well before, first: extract your ipsw by using this command, 1: cd ipsw/, 2: unzip *.ipsw -d extracted, then it is going to extract everyfile from the ipsw so now second: take the ipsw from the lastest ios or the ios that you were before (i mean the ios when the blobs were taken) and extract it and go to extracted/firmware/all_flash there will be some files called iboot and llb (only the ones that has .im4p at the end) takes that file and put it on the downr1n ipsw (this ipsw will be the ios version that you want to downgrade with) and replace the llb and iboot with the laster ios ipsw ones and then put the mod one into the ipsw/ directory on downr1n and try downgrade with it, (important: we did unzip *.ipsw -d extracted at the start because we mustn't modify the iboot file that will be used to boot ios 14 or the ios that we want downgrade if we replace that with the one from the lastest ios, ios 14 will not work (because ofc they are different version)).
+
+</p>
+</details>
+
+
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
  **If your device is stuck in recovery, please run one of the following:**
