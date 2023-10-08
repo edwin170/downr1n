@@ -836,12 +836,12 @@ if [ true ]; then
         #remote_cp root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd work/kernelcache.img4
         cp -v "work/kernelcache.img4" "boot/${deviceid}"
         echo "[*] Finished of patching the kernel"
+        
+        remote_cmd "/bin/mkdir -p /mnt1/Applications/dualra1n-loader.app && /bin/mkdir -p /mnt1/Applications/trollstore.app"
 
         echo "[*] installing dualra1n-loader"
-        unzip other/dualra1n-loader.ipa -d other/
-        mkdir -p other/Payload/Applications/
-        mv -nv other/Payload/dualra1n-loader.app  other/Payload/Applications/
-        remote_cp other/Payload/ root@localhost:/mnt1/
+        unzip -o other/dualra1n-loader.ipa -d other/
+        remote_cp other/Payload/dualra1n-loader.app root@localhost:/mnt8/Applications/
         
         echo "[*] Saving snapshot"
         if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
@@ -1094,6 +1094,7 @@ if [ true ]; then
         echo "[*] Executing futurerestore ..."
         _runFuturerestore
         sleep 2
+        echo "if you are on linux please try above command if futurerestore failed"
         echo -e "\033[1;33mif futurerestore didn't finish succesfully please try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
 
         echo "if futurerestore restore sucess, you can boot using  --boot"
