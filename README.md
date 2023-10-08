@@ -80,9 +80,9 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 
 - [wikiproxy.py](https://github.com/afastaudir8/wikiproxy).
 
-- [futurerestore](https://github.com/futurerestore/futurerestore) thank you for futurerestore.  
+- [futurerestore](https://github.com/futurerestore/futurerestore) without futurerestore it couldn't be downgraded.  
 
-- [mineek](https://github.com/mineek/) because the original downgrade sunst0rm.
+- [palera1nLegacy](https://github.com/palera1n/palera1n/tree/legacy) some code based on palera1n legacy.
 
 - [exploit](https://github.com/exploit3dguy/) for asrpatcher
 
@@ -99,6 +99,8 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 - [libimobiledevice](https://github.com/libimobiledevice) for several tools used in this project (irecovery, ideviceenterrecovery etc), and [nikias](https://github.com/nikias) for keeping it up to date
 
 - [Ralp0045](https://github.com/Ralph0045/Kernel64Patcher) amazing dtree_patcher and kernel64patcher ;)
+
+- [mineek](https://github.com/mineek/sunst0rm) because the original idea.
 
 </p>
 </details>
