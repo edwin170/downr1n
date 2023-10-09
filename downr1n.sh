@@ -841,7 +841,7 @@ if [ true ]; then
 
         echo "[*] installing dualra1n-loader"
         unzip -o other/dualra1n-loader.ipa -d other/
-        remote_cp other/Payload/dualra1n-loader.app root@localhost:/mnt8/Applications/
+        remote_cp other/Payload/dualra1n-loader.app root@localhost:/mnt1/Applications/
         
         echo "[*] Saving snapshot"
         if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
