@@ -1,7 +1,7 @@
 # downr1n
 Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 14 and 15.
 
-NOTE: iOS 16 is NOT SUPPORTED.
+NOTE: iOS 16 on a11 need that you replace LLB check https://github.com/edwin170/downr1n#issues-putting-device-in-pwndfu-mode for more info.
 
 In general, dual booting is a better option than downgrading if you have the necessary storage. if you activate the localboot path it would be ultra better believe me xd.
 
