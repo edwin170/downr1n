@@ -510,10 +510,10 @@ if [ "$cmd_not_found" = "1" ]; then
 fi
 
 # Check for pyimg4
-if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("lzss") and not pkgutil.find_loader("pyliblzfse") and not pkgutil.find_loader("pyimg4"))'; then
+if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("lzss") and not pkgutil.find_loader("pyimg4"))'; then
     echo '[-] One or more required modules are not installed. Press any key to install them, or press ctrl + c to cancel'
     read -n 1 -s
-    python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4 pyliblzfse lzss
+    python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4 pyliblzfse lzss -U
 fi
 
 # Check if futurerestore exists
