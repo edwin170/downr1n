@@ -832,9 +832,9 @@ if [ true ]; then
         remote_cp root@localhost:"$sysDir"System/Library/Caches/com.apple.kernelcaches/kcache.patchedB work/ # that will return the kernelpatcher in order to be patched again and boot with it 
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rknl --extra work/kpp.bin --lzss >/dev/null
+            python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss >/dev/null
         else
-            python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rknl --lzss >/dev/null
+            python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rkrn --lzss >/dev/null
         fi
 
         remote_cmd "rm -f ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.raw ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.patched ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
@@ -869,6 +869,7 @@ if [ true ]; then
         if [[ "$version" = "13."* ]]; then
             echo "[*] DONE ... now reboot and boot again"   
             remote_cmd "/sbin/reboot"
+            exit;
         fi
 
         if [ "$taurine" = 1 ]; then
@@ -1001,7 +1002,7 @@ if [ true ]; then
             fi
         fi
 
-        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "serial=3 wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; fi)" >/dev/null
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; fi)" >/dev/null
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
 
         echo "[*] Patching the kernel"
