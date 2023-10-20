@@ -1,5 +1,5 @@
 # downr1n
-Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 14 and 15.
+Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 15, 14 and 13.
 
 NOTE: iOS 16 on a11 need that you replace LLB check https://github.com/edwin170/downr1n#issues-putting-device-in-pwndfu-mode for more info.
 
@@ -33,10 +33,10 @@ The various command-line options are as follows:
 ---
 
 # Dependencies
-- please exeucte this command: python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4.
+- please execute this command: python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4.
 - A disabled passcode on A10 and A11 devices.
 - unzip, python3, libimobiledevice-utils, libusbmuxd-tools, xz-utils.
-- An .iPSW file containing iOS 14 or 15.
+- An .iPSW file containing iOS 15, 14, 13.
 - A device running macOS or a Linux distro. It is recommended to use macOS, as it is likely more stable and faster.
 
 # Issues Putting Device in PwnDFU Mode

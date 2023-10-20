@@ -770,17 +770,23 @@ if [ true ]; then
     fi
 
     echo "[*] Mounting filesystems ..."
-    remote_cmd "/usr/bin/mount_filesystems  2>/dev/null"
+    if [[ "$version" = "13."* ]]; then
+        remote_cmd "/sbin/mount_apfs /dev/disk0s1s1 /mnt1"
+    else
+        remote_cmd "/usr/bin/mount_filesystems  2>/dev/null"
+    fi
 
     has_active=$(remote_cmd "ls /mnt6/active" 2> /dev/null)
-    if [ ! "$has_active" = "/mnt6/active" ]; then
+    if [ ! "$has_active" = "/mnt6/active" ] && [[ ! "$version" = "13."* ]]; then
         echo "[!] Active file does not exist! Please use SSH to create it"
         echo "    /mnt6/active should contain the name of the UUID in /mnt6"
         echo "    When done, type reboot in the SSH session, then rerun the script"
         echo "    ssh root@localhost -p 2222"
         exit
+    else
+        active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
     fi
-    active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
+    
     mkdir -p "boot/${deviceid}"
 
     if [ ! -e blobs/"$deviceid"-"$version".shsh2 ]; then
@@ -806,21 +812,24 @@ if [ true ]; then
             python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw >/dev/null
         fi
         
-        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched -e $(if [[ ! "$version" = "15."* ]]; then echo "-b"; else echo "-b15 -r"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi) >/dev/null
+        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched $(if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi) $(if [[ "$version" = "14."* ]]; then echo "-b"; fi) $(if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi) >/dev/null
 
-
-        remote_cp work/kcache.patched root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched >/dev/null
+        sysDir="/mnt6/$active/"
+        if [[ "$version" = "13."* ]]; then
+            sysDir="/mnt1/"
+        fi
+        remote_cp work/kcache.patched root@localhost:"$sysDir"System/Library/Caches/com.apple.kernelcaches/kcache.patched >/dev/null
         #remote_cp boot/"${deviceid}"/kernelcache.img4 "root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcache" >/dev/null
-        remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios >/dev/null
+        remote_cp binaries/$(if [[ "$version" = "13."* ]]; then echo "Kernel13Patcher.ios"; else echo "Kernel15Patcher.ios"; fi) root@localhost:/mnt1/private/var/root/Kernel15Patcher.ios >/dev/null
         remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/Kernel15Patcher.ios"
         remote_cmd "/bin/chmod 755 /mnt1/private/var/root/Kernel15Patcher.ios"
         sleep 1
-        if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patchedB  2>/dev/null") ]; then
+        if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.patched ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.patchedB  2>/dev/null") ]; then
             echo "you have the kernelpath already installed "
         fi
 
         sleep 2
-        remote_cp root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/kcache.patchedB work/ # that will return the kernelpatcher in order to be patched again and boot with it 
+        remote_cp root@localhost:"$sysDir"System/Library/Caches/com.apple.kernelcaches/kcache.patchedB work/ # that will return the kernelpatcher in order to be patched again and boot with it 
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
             python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rknl --extra work/kpp.bin --lzss >/dev/null
@@ -828,7 +837,7 @@ if [ true ]; then
             python3 -m pyimg4 im4p create -i "work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)" -o work/kcache.im4p -f rknl --lzss >/dev/null
         fi
 
-        remote_cmd "rm -f /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.patched /mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
+        remote_cmd "rm -f ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.raw ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.patched ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.im4p"
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M >/dev/null
 
         #"$dir"/kerneldiff work/kcache.raw work/kcache.patchedB work/kc.bpatch
@@ -855,6 +864,11 @@ if [ true ]; then
         echo "[*] Fixing dualra1n-loader"
         if [ ! $(remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" ) ]; then
             echo "install dualra1n-loader using trollstore or another methods"
+        fi
+
+        if [[ "$version" = "13."* ]]; then
+            echo "[*] DONE ... now reboot and boot again"   
+            remote_cmd "/sbin/reboot"
         fi
 
         if [ "$taurine" = 1 ]; then
@@ -892,7 +906,7 @@ if [ true ]; then
 
     fi
     
-    echo "[*] Patching kernel ..." # this will send and patch the kernel
+    echo "[*] extracting kernel ..." # this will send and patch the kernel
     
     cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
     
@@ -901,17 +915,8 @@ if [ true ]; then
     else
         python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw >/dev/null
     fi
-    remote_cp work/kcache.raw root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw >/dev/null
-    remote_cp binaries/Kernel15Patcher.ios root@localhost:/mnt1/private/var/root/kpf15.ios >/dev/null
-    remote_cmd "/usr/sbin/chown 0 /mnt1/private/var/root/kpf15.ios"
-    remote_cmd "/bin/chmod 755 /mnt1/private/var/root/kpf15.ios"
-    sleep 1
-    
-    if [ ! $(remote_cmd "/mnt1/private/var/root/kpf15.ios /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.raw /mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched  2>/dev/null") ]; then
-        echo "you have the kernelpath already installed "
-    fi
-    echo "[*] kernel patched with kpf"
-    remote_cp root@localhost:/mnt1/System/Library/Caches/com.apple.kernelcaches/kcache.patched work/ >/dev/null
+
+    echo "[*] extracted"
 
     echo "Reboot into recovery mode ..."
     remote_cmd "/usr/sbin/nvram auto-boot=false"
@@ -949,9 +954,9 @@ if [ true ]; then
             "$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
             
             if [ "$os" = 'Darwin' ]; then
-                "$dir"/pzb -g Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache "$ipswurl"
+                "$dir"/pzb -g Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache "$ipswurl"
             else
-                "$dir"/pzb -g Firmware/"$(../Linux/PlistBuddy BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')".trustcache "$ipswurl"
+                "$dir"/pzb -g Firmware/"$(../binaries/Linux/PlistBuddy BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache "$ipswurl"
             fi
             cd ..
         else
@@ -961,11 +966,17 @@ if [ true ]; then
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             
-            if [ "$os" = "Darwin" ]; then
-                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.img4 -M work/IM4M >/dev/null
+            if [ "$os" = 'Darwin' ]; then
+                cp "$extractedIpsw"/Firmware/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache work/
             else
-                "$dir"/img4 -i "$extractedIpsw"/Firmware/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M >/dev/null
+                cp "$extractedIpsw"/Firmware/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache work/
             fi
+        fi
+
+        if [ "$os" = "Darwin" ]; then
+            "$dir"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.img4 -M work/IM4M -T rtsc >/dev/null
+        else
+            "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M -T rtsc >/dev/null
         fi
 
         echo "[*] Finished moving the boot files to work"
@@ -981,23 +992,25 @@ if [ true ]; then
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec >/dev/null
         sleep 1
         
-        echo "[*] Applying patches to the iboot"
-        if [ "$os" = 'Linux' ]; then
-            sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
-        else
-            LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
+        if [ "$local" = "1" ]; then
+            echo "[*] Applying patches to the iboot"
+            if [ "$os" = 'Linux' ]; then
+                sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
+            else
+                LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
+            fi
         fi
-        
-        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; fi)" >/dev/null
+
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "serial=3 wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; fi)" >/dev/null
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
 
         echo "[*] Patching the kernel"
-        "$dir"/Kernel64Patcher work/kcache.patched work/kcache.patchedB -e $(if [[ "$version" = "14."* ]]; then echo "-b"; else echo "-b15 -r"; fi) >/dev/null
+        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched $(if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi) $(if [[ "$version" = "14."* ]]; then echo "-b"; fi) $(if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi) >/dev/null
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss >/dev/null
+            python3 -m pyimg4 im4p create -i work/kcache.patched -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss >/dev/null
         else
-            python3 -m pyimg4 im4p create -i work/kcache.patchedB -o work/kcache.im4p -f rkrn --lzss >/dev/null
+            python3 -m pyimg4 im4p create -i work/kcache.patched -o work/kcache.im4p -f rkrn --lzss >/dev/null
         fi
 
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M >/dev/null
@@ -1035,18 +1048,21 @@ if [ true ]; then
             "$dir"/ldid -e $mounted/usr/sbin/asr > work/asr.plist
             "$dir"/ldid -Swork/asr.plist work/patched_asr
             chmod -R 755 work/patched_asr
-    
-            cp $mounted/usr/local/bin/restored_external work/restored_external
-            "$dir"/restored_external64_patcher work/restored_external work/patched_restored_external >/dev/null
-            "$dir"/ldid -e work/restored_external > work/restored_external.plist
-            "$dir"/ldid -Swork/restored_external.plist work/patched_restored_external
-            chmod -R 755 work/patched_restored_external
-    
             rm $mounted/usr/sbin/asr
-            rm $mounted/usr/local/bin/restored_external
-            
+
             mv work/patched_asr $mounted/usr/sbin/asr
-            mv work/patched_restored_external $mounted/usr/local/bin/restored_external
+
+
+            if [[ ! "$version" = "13."* ]]; then
+                cp $mounted/usr/local/bin/restored_external work/restored_external
+                "$dir"/restored_external64_patcher work/restored_external work/patched_restored_external >/dev/null
+                "$dir"/ldid -e work/restored_external > work/restored_external.plist
+                "$dir"/ldid -Swork/restored_external.plist work/patched_restored_external
+                chmod -R 755 work/patched_restored_external
+                rm $mounted/usr/local/bin/restored_external
+                mv work/patched_restored_external $mounted/usr/local/bin/restored_external
+            fi
+            
     
             hdiutil detach -force /tmp/SSHRD
         else
@@ -1056,21 +1072,22 @@ if [ true ]; then
             "$dir"/ldid -e work/asr > work/asr.plist
             "$dir"/ldid -Swork/asr.plist work/patched_asr
             chmod 755 work/patched_asr
-    
-            "$dir"/hfsplus work/ramdisk.dmg extract /usr/local/bin/restored_external work/restored_external >/dev/null
-            "$dir"/restored_external64_patcher work/restored_external work/patched_restored_external >/dev/null
-            "$dir"/ldid -e work/restored_external > work/restored_external.plist
-            "$dir"/ldid -Swork/restored_external.plist work/patched_restored_external
-            chmod 755 work/patched_restored_external
-    
+
             "$dir"/hfsplus work/ramdisk.dmg rm /usr/sbin/asr
-            "$dir"/hfsplus work/ramdisk.dmg rm /usr/local/bin/restored_external
-            
             "$dir"/hfsplus work/ramdisk.dmg add work/patched_asr /usr/sbin/asr
-            "$dir"/hfsplus work/ramdisk.dmg add work/patched_restored_external /usr/local/bin/restored_external
-    
             "$dir"/hfsplus work/ramdisk.dmg chmod 100755 /usr/sbin/asr
-            "$dir"/hfsplus work/ramdisk.dmg chmod 100755 /usr/local/bin/restored_external
+
+            if [[ ! "$version" = "13."* ]]; then
+
+                "$dir"/hfsplus work/ramdisk.dmg extract /usr/local/bin/restored_external work/restored_external >/dev/null
+                "$dir"/restored_external64_patcher work/restored_external work/patched_restored_external >/dev/null
+                "$dir"/ldid -e work/restored_external > work/restored_external.plist
+                "$dir"/ldid -Swork/restored_external.plist work/patched_restored_external
+                chmod 755 work/patched_restored_external
+                "$dir"/hfsplus work/ramdisk.dmg rm /usr/local/bin/restored_external
+                "$dir"/hfsplus work/ramdisk.dmg add work/patched_restored_external /usr/local/bin/restored_external
+                "$dir"/hfsplus work/ramdisk.dmg chmod 100755 /usr/local/bin/restored_external
+            fi
         fi
     
         python3 -m pyimg4 im4p create -i work/ramdisk.dmg -o work/rdsk.im4p -f rdsk >/dev/null
