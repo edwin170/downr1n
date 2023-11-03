@@ -463,7 +463,7 @@ _boot() {
     "$dir"/irecovery -f "boot/${deviceid}/kernelcache.img4" 
     sleep 1
 
-    "$dir"/irecovery -c "$(if [ ! "$fsboot" = "1" ]; then echo "bootx"; else echo "fsboot"; fi)"
+    "$dir"/irecovery -c bootx
     exit;
 }
 
@@ -544,13 +544,6 @@ if [ -e work ]; then
     mkdir work
 else
     mkdir work
-fi
-
-if [ ! -e "$dir"/gaster ]; then
-    curl -sLO https://nightly.link/verygenericname/gaster/workflows/makefile/main/gaster-"$os".zip
-    unzip gaster-"$os".zip
-    mv gaster "$dir"/
-    rm -rf gaster gaster-"$os".zip
 fi
 
 chmod +x "$dir"/*
