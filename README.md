@@ -65,7 +65,7 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 - remember if you will use the next command or will activate localboot it is better that you first downgrade and when you success you can use --jailbreak to jailbreak the device and it will ask you to activate localboot path. why do this because the localboot need to be executed after --jailbreak
 
 # Need Help?
-- Join our discord server: https://discord.gg/AjEHs5ug
+- Join my discord server: [Dualra1nServer](https://discord.gg/Gjs2P7FBuk)
 
 # How to Jailbreak?
 - Jailbreak with dualra1n-loader: ./downr1n --jailbreak (YourVer = 14.3). Note: this does not actually jailbreak the device. When I say "jailbreak," I'm referring to the process of installing Sileo and bootstrapping the device. Dualra1n-loader only installs Sileo and bootstraps with the kernel patch.
