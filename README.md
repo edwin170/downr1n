@@ -33,7 +33,7 @@ The various command-line options are as follows:
 ---
 
 # Dependencies
-- please execute this command: python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4.
+- please execute this command: `python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4 pylzss`
 - A disabled passcode on A10 and A11 devices.
 - unzip, python3, libimobiledevice-utils, libusbmuxd-tools, xz-utils.
 - An .iPSW file containing iOS 15, 14, 13.
