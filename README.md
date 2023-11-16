@@ -56,6 +56,8 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 
 - on ios 13 the touch id doesn't work so the home button on iphone 7 will not work sadly.
 
+- you can't downgrade to ios 14.2 lower on a11 devices
+
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
  **If your device is stuck in recovery, please run one of the following:**
