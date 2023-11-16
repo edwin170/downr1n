@@ -52,6 +52,9 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 </p>
 </details>
 
+# importants things
+
+- on ios 13 the touch id doesn't work so the home button on iphone 7 will not work sadly.
 
 # Warnings
 - I am **NOT** responsible for any data loss. The user of this program accepts responsibility should something happen to their device.
@@ -75,6 +78,8 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 # This project was created with love by Edwin :)
 
 # Credits
+
+- thanks to [sasa](https://github.com/sasa8810) for the code of download futurerestore ;|
 
 <details><summary>Other credits for tools and codes used in downr1n</summary>
 
