@@ -79,7 +79,9 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 
 # Credits
 
-- thanks to [sasa](https://github.com/sasa8810) for the code of download futurerestore ;|
+- thanks to [uckermark](https://github.com/Uckermark/) for the amazing dualra1n-loader
+
+- thanks to [sasa](https://github.com/sasa8810) for the code of download futurerestore ;| 
 
 <details><summary>Other credits for tools and codes used in downr1n</summary>
 
