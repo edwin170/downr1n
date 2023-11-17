@@ -18,7 +18,6 @@ echo "[*] Command ran:`if [ $EUID = 0 ]; then echo " sudo"; fi` ./downr1n.sh $@"
 # =========
 # Variables
 # =========
-ipsw=$(find ipsw/ -name "*.ipsw") # put your ipsw 
 version="3.0"
 os=$(uname)
 dir="$(pwd)/binaries/$os"
@@ -64,8 +63,8 @@ step() {
 
 print_help() {
     cat << EOF
-Usage: $0 [Options] [ subcommand | iOS version which are you]. put your ipsw in the directory ipsw/
-iOS 15 - 14.0 downgrade tool ./downr1n --downgrade 15.7 (the ios of your device) ipsw 
+Usage: $0 [options] [vers] [ipsw] [ subcommand ] vers = the version that you want to dualboot
+iOS 15 - 13.0 downgrade tool ./downr1n --downgrade 15.7 (the ios that you want to downgrade with) ipsw 
 
 Options:
     --downgrade         downgrade tethered your device to ios 14. you can use --localboot or --fsboot in order to fix some problems if you had them 
@@ -149,7 +148,11 @@ parse_cmdline() {
         if [[ "$arg" == --* ]] && [ -z "$no_more_opts" ]; then
             parse_opt "$arg";
         elif [ "$arg_count" -lt "$max_args" ]; then
-            parse_arg "$arg";
+            if [[ "$arg" == *"ipsw"* ]]; then
+                ipsw=$arg
+            else
+                parse_arg "$arg";
+            fi
         else
             echo "[-] Too many arguments. Use $0 --help for help.";
             exit 1;
@@ -653,9 +656,6 @@ sleep 2
 if [ "$boot" = "1" ]; then # call boot in order to boot it 
     _boot
 fi
-    # =========
-    # extract ipsw 
-    # =========
 
 # understand my code is more difficult that understand a programing language fr
 if [ ! $(ls ipsw/*.ipsw) ]; then
@@ -686,27 +686,115 @@ if [ ! $(ls ipsw/*.ipsw) ]; then
  fi
 
     
-cd ipsw/
-ipsw_files=(*.ipsw)
-if [[ ${#ipsw_files[@]} -gt 1 ]]; then
-    echo "in ipsw/ directory there is more than one ipsw so delete one and try again please"
-    cd ..
-    exit;
-fi
-cd ..
+    # =========
+    # extract ipsw 
+    # =========
+mkdir -p ipsw/extracted/$deviceid
+mkdir -p ipsw/extracted/$deviceid/$version
 
-if [ -a $ipsw ] || [ "${ipsw: -5}" == ".ipsw" ]; then
-  echo "[*] Continuing..."
+extractedIpsw="ipsw/extracted/$deviceid/$version/"
+
+if [[ "$ipsw" == *".ipsw" ]]; then
+    echo "[*] Argument detected we are gonna use the ipsw specified"
 else
-  _eexit $ipsw "[-] is not a valid ipsw file."
+    ipsw=$(ls ipsw/*.ipsw)
+
+    if [ ${#ipsw[@]} -eq 0 ]; then
+        echo "No .ipsw files found."
+        exit;
+    else
+        for file in "${ipsw[@]}"; do
+            if [[ "$file" = *"$version"* ]]; then
+                while true
+                do
+                    echo "[-] we found $file, do you want to use it ? please write, "yes" or "no""
+                    read result
+                    if [ "$result" = "yes" ]; then
+                        ipsw=$file
+                        break
+                    elif [ "$result" = "no" ]; then
+                        break
+                    fi
+                done
+            fi
+        done
+    fi
 fi
+
+# Check if ipsw is an array
+if [[ "$(declare -p ipsw)" =~ "declare -a" ]]; then
+    while true
+    do
+        echo "Choose an IPSW by entering its number:"
+        for i in "${!ipsw[@]}"; do
+            echo "$((i+1)). ${ipsw[i]}"
+        done
+        read -p "Enter your choice: " choice
+
+        if [[ ! "$choice" =~ ^[1-${#ipsw[@]}]$ ]]; then
+            echo "Invalid IPSW number. Please enter a valid number."
+        else
+            echo "[*] We are gonna use ${ipsw[$choice-1]}"
+            ipsw="${ipsw[$choice-1]}"
+            break
+        fi
+    done
+fi
+
+unzip -o $ipsw BuildManifest.plist -d work/ >/dev/null
 
 if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
+    echo "[*] Checking if the ipsw is for your device"
+    unzip -o $ipsw BuildManifest.plist -d work/ >/dev/null
+    ipswVers=""
+    ipswDevId=""
+    counter=0
+    declare -a ipswDevicesid
+
+    while [ ! "$deviceid" = "$ipswDevId" ]; do
+        if [ "$os" = 'Darwin' ]; then
+            ipswDevId=$(/usr/bin/plutil -extract "SupportedProductTypes.$counter" xml1 -o - work/BuildManifest.plist | grep '<string>' | cut -d\> -f2 | cut -d\< -f1 | head -1)
+        else
+            ipswDevId=$("$dir"/PlistBuddy work/BuildManifest.plist -c "Print SupportedProductTypes:$counter" | sed 's/"//g')
+        fi
+
+        ipswDevicesid[counter]=$ipswDevId
+
+        if [ "$ipswDevId" = "" ]; then
+            break
+        fi
+
+        let "counter=counter+1" # ((counter++)) this counter break the script on linus
+    done
+    
+    if [ "$ipswDevId" = "" ]; then
+        echo "[/] It looks like this ipsw file is wrong. Please check your ipsw."
+
+        for element in "${ipswDevicesid[@]}"; do
+            echo "These are the ipsw devices supported: $element"
+        done
+
+        echo "Your device $deviceid is not in the list."
+        read -p "Want to continue? Press enter ..."
+    fi
+
+
+
+    echo "[*] Checking ipsw version"
+    if [ "$os" = 'Darwin' ]; then
+        ipswVers=$(/usr/bin/plutil -extract "ProductVersion" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)
+    else
+        ipswVers=$("$dir"/PlistBuddy work/BuildManifest.plist -c "Print ProductVersion" | sed 's/"//g')
+    fi
+    
+    if [[ ! "$version" = "$ipswVers" ]]; then
+        echo "ipsw version is $ipswVers, and you specify $version"
+        read -p "wrong ipsw version detected, click ENTER to continue or just ctrl + c to exit"
+    fi
+
     # extracting ipsw
-    echo "[*] Extracting ipsw, hang on please ..." # this will extract the ipsw into ipsw/extracted
-    unzip -n $ipsw -d "ipsw/extracted" >/dev/null
-    cp -v "$extractedIpsw/BuildManifest.plist" work/
-    echo "[*] Got extract the IPSW successfully"
+    echo "extracting ipsw, hang on please ..." # this will extract the ipsw into ipsw/extracted
+    unzip -n $ipsw -d $extractedIpsw
 fi
 
 if [ "$jailbreak" = "1" ]; then
