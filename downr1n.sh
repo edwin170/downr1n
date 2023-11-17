@@ -2,6 +2,7 @@
 
 mkdir -p logs
 mkdir -p boot
+mkdir -p ipsw/extracted
 set -e
 
 log="last".log
