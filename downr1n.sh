@@ -503,7 +503,7 @@ if [ "$os" = 'Linux' ]; then
     linux_cmds='lsusb'
 fi
 
-for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep xz ${linux_cmds}; do
+for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep ${linux_cmds}; do
     if ! command -v "${cmd}" > /dev/null; then
         echo "[-] Command '${cmd}' not installed, please install it!";
         cmd_not_found=1
@@ -526,11 +526,11 @@ if [ ! -e "$dir"/futurerestore ]; then
     if [ "$os" = "Darwin" ]; then
         curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
         unzip futurerestore-macOS-RELEASE.zip
-        xz -dc futurerestore-*.xz | tar xfv -
+        tar Jxfv futurerestore-*.xz
     else
         curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
         unzip futurerestore-Linux-x86_64-RELEASE.zip
-        xz -dc futurerestore-*.xz | tar xfv -
+        tar Jxfv futurerestore-*.xz
     fi
     mv futurerestore "$dir"/
     rm -rf futurerestore-*
