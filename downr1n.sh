@@ -3,6 +3,7 @@
 mkdir -p logs
 mkdir -p boot
 mkdir -p ipsw/extracted
+mainDir=$(pwd)
 set -e
 
 log="last".log
@@ -24,7 +25,6 @@ os=$(uname)
 dir="$(pwd)/binaries/$os"
 max_args=2
 arg_count=0
-extractedIpsw="ipsw/extracted/"
 
 if [ ! -d "ramdisk/" ]; then
     git clone https://github.com/dualra1n/ramdisk.git --depth 1
@@ -73,6 +73,7 @@ Options:
     --jailbreak         jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
     --taurine           jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
     --boot              this boot the device.
+    --keyServer         use this option to downgrade when the keys server is in problem. only on MacOS. use ex: --downgrade 14.8 --keyServer 
     --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files
     --debug             Debug the script
 
@@ -100,6 +101,9 @@ parse_opt() {
             ;;
         --taurine)
             taurine=1
+            ;;
+        --keyServer)
+            keyServer=1
             ;;
         --fixBoot)
             fixBoot=1
@@ -567,7 +571,7 @@ if [ "$debug" = "1" ]; then
 fi
 
 if [ "$clean" = "1" ]; then
-    rm -rf  work blobs/ boot/"$deviceid"/  ipsw/extracted
+    rm -rf  work blobs/ boot/"$deviceid"/ 
     echo "[*] Removed the created boot files"
     exit
 fi
@@ -698,7 +702,11 @@ extractedIpsw="ipsw/extracted/$deviceid/$version/"
 if [[ "$ipsw" == *".ipsw" ]]; then
     echo "[*] Argument detected we are gonna use the ipsw specified"
 else
-    ipsw=$(ls ipsw/*.ipsw)
+    ipsw=()
+    for file in ipsw/*.ipsw; do
+        ipsw+=("$file")
+    done
+
 
     if [ ${#ipsw[@]} -eq 0 ]; then
         echo "No .ipsw files found."
@@ -711,6 +719,8 @@ else
                     echo "[-] we found $file, do you want to use it ? please write, "yes" or "no""
                     read result
                     if [ "$result" = "yes" ]; then
+                        echo "$file"
+                        unset ipsw
                         ipsw=$file
                         break
                     elif [ "$result" = "no" ]; then
@@ -746,39 +756,39 @@ unzip -o $ipsw BuildManifest.plist -d work/ >/dev/null
 
 if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     echo "[*] Checking if the ipsw is for your device"
-    unzip -o $ipsw BuildManifest.plist -d work/ >/dev/null
+    ipswDevicesid=()
     ipswVers=""
     ipswDevId=""
     counter=0
-    declare -a ipswDevicesid
 
-    while [ ! "$deviceid" = "$ipswDevId" ]; do
+    while [ ! "$deviceid" = "$ipswDevId" ]
+    do
         if [ "$os" = 'Darwin' ]; then
-            ipswDevId=$(/usr/bin/plutil -extract "SupportedProductTypes.$counter" xml1 -o - work/BuildManifest.plist | grep '<string>' | cut -d\> -f2 | cut -d\< -f1 | head -1)
+            ipswDevId=$(/usr/bin/plutil -extract "SupportedProductTypes.$counter" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)
         else
             ipswDevId=$("$dir"/PlistBuddy work/BuildManifest.plist -c "Print SupportedProductTypes:$counter" | sed 's/"//g')
         fi
 
         ipswDevicesid[counter]=$ipswDevId
 
-        if [ "$ipswDevId" = "" ]; then
+        if [ "$ipswDevId" = "" ]; then # this is to stop looking for more devices as it pass the limit and can't find deviceid
             break
         fi
 
-        let "counter=counter+1" # ((counter++)) this counter break the script on linus
+        let "counter=counter+1"
     done
     
+    
     if [ "$ipswDevId" = "" ]; then
-        echo "[/] It looks like this ipsw file is wrong. Please check your ipsw."
-
+        echo "[/] it looks like this ipsw file is wrong, please check your ipsw"
+        
         for element in "${ipswDevicesid[@]}"; do
-            echo "These are the ipsw devices supported: $element"
+            echo "this are the ipsw devices support: $element"
         done
-
-        echo "Your device $deviceid is not in the list."
-        read -p "Want to continue? Press enter ..."
+        
+        echo "and your device $deviceid is not in the list"
+        read -p "want to continue ? click enter ..."
     fi
-
 
 
     echo "[*] Checking ipsw version"
@@ -793,14 +803,21 @@ if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
         read -p "wrong ipsw version detected, click ENTER to continue or just ctrl + c to exit"
     fi
 
+fi    
+
+
+if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     # extracting ipsw
-    echo "extracting ipsw, hang on please ..." # this will extract the ipsw into ipsw/extracted
-    unzip -n $ipsw -d $extractedIpsw
+    echo "[*] Extracting ipsw, hang on please ..." # this will extract the ipsw into ipsw/extracted
+    unzip -n $ipsw -d $extractedIpsw >/dev/null
+    #cp -v "$extractedIpsw/BuildManifest.plist" work/
+    echo "[*] Got extract the IPSW successfully"
 fi
 
 if [ "$jailbreak" = "1" ]; then
     cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
-    "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
+    ramdisk/Darwin/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec
+    ramdisk/Darwin/gaster reset
 fi
 
 # ============
@@ -882,6 +899,12 @@ if [ true ]; then
 
     "$dir"/img4tool -e -s blobs/"$deviceid"-"$version".shsh2 -m work/IM4M >/dev/null
     echo "[*] Dumpped SHSH"
+
+    echo "[*] Checking device version"
+    remote_cp other/plutil root@localhost:/mnt1/
+
+    SystemVersion=$(remote_cmd "chmod +x /mnt1/plutil && /mnt1/plutil -key ProductVersion /mnt1/System/Library/CoreServices/SystemVersion.plist")
+    echo "the version that the device is currently in is $SystemVersion"
 
     if [ "$jailbreak" = "1" ]; then
         echo "[*] Patching kernel" # this will send and patch the kernel
@@ -1069,7 +1092,7 @@ if [ true ]; then
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec
         
         sleep 1
-        "$dir"/iBoot64Patcher work/iBSS.dec work/iBSS.patched >/dev/null
+        "$dir"/iBoot64Patcher work/iBSS.dec work/iBSS.patched -n >/dev/null
         "$dir"/img4 -i work/iBSS.patched -o work/iBSS.img4 -M work/IM4M -A -T ibss >/dev/null
         
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec >/dev/null
@@ -1086,6 +1109,17 @@ if [ true ]; then
 
         "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; fi)" >/dev/null
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
+
+        if [ "$keyServer" = "1" ]; then
+            echo "[*] patching ibss and ibec for futurerestore downgrade"
+            mkdir -p $TMPDIR/futurerestore
+            cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
+            "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBECFuture.dec >/dev/null
+            "$dir"/iBoot64Patcher work/iBECFuture.dec work/iBECFuture.patched b "rd=md0 nand-enable-reformat=0x1 -v -restore debug=0x2014e keepsyms=0x1 amfi=0xff amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1" -n >/dev/null
+            "$dir"/img4 -i work/iBECFuture.patched -o "$TMPDIR/futurerestore/ibec.$model.$version_code.patched.img4" -M work/IM4M -A -T ibec >/dev/null
+            cp -av work/iBSS.img4 $TMPDIR/futurerestore/ibss.$model.$version_code.patched.img4
+            echo "sucessfully create files for futurerestore"
+        fi
 
         echo "[*] Patching the kernel"
         "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched $(if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi) $(if [[ "$version" = "14."* ]]; then echo "-b"; fi) $(if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi) >/dev/null
@@ -1107,7 +1141,7 @@ if [ true ]; then
             python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p -f rkrn --lzss >/dev/null
         fi
     
-    
+        echo "[*] Patching devicetree"
         "$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/devicetree.img4 -M work/IM4M -T rdtr >/dev/null
         
         if [ "$os" = "Darwin" ]; then
@@ -1178,6 +1212,45 @@ if [ true ]; then
         cp -v work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
 
         echo "[*] Sucess Patching the boot files"
+        echo "[*] Patching the llb in the ipsw to avoid false dfu mode"
+        
+        echo "[=] Hi, please i need that you write the ios version that this device is on or the version of the ios that it was on (if this device is already downgraded), most of the time is the lastest version of ios. write 0 if you want to skip this (it is not recommended to skip this as this can avoid false dfu mode)"
+        
+        while true
+        do
+            if [ ! "$version" = "$SystemVersion" ]; then
+                echo "Version detected!. we are gonna use $SystemVersion"
+                ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$SystemVersion'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
+            else
+                read result
+                if [ "$result" = "0" ]; then
+                    echo "SKIPPING ..."
+                    break
+                fi
+                ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$result'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
+            fi
+
+            sleep 1
+            
+            cd work/
+            if [ $("$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswLLB" >/dev/null) ]; then
+                echo "failed to download LLB"
+            fi
+            cd ..
+
+            if [ ! -e "work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" ]; then
+                echo "[-] ERROR downloading the llb please check the ios version and write it again. if this error happens a lot of time please use 0 to skip llb"
+            else
+                echo "[*] LLB downloaded correctly"
+                echo "[*] putting this LLB into the ipsw"
+                cp -f work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//') "$extractedIpsw/Firmware/all_flash/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')"
+                cd $extractedIpsw
+                zip --update "$mainDir/$ipsw" Firmware/all_flash/"$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" Firmware/all_flash//$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')
+                cd $mainDir
+                echo "[*] Replaced LLB suscessfully"
+                break
+            fi
+        done
         sleep 1
         
         set +e
@@ -1194,7 +1267,8 @@ if [ true ]; then
         echo "[*] Executing futurerestore ..."
         _runFuturerestore
         sleep 2
-        echo "if you are on linux please try above command if futurerestore failed"
+
+        echo "if futurerestore failed you can try execute the command below"
         echo -e "\033[1;33mif futurerestore didn't finish succesfully please try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
 
         echo "if futurerestore restore sucess, you can boot using  --boot"

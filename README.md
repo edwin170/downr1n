@@ -24,6 +24,8 @@ The various command-line options are as follows:
 
       --boot             : Boot the device.
 
+      --keyServer         use this option to downgrade when the keys server is in problem. only on MacOS. use ex: --downgrade 14.8 --keyServer 
+
       --dont-restore     : Avoids using futurerestore, this can be used to only create boot files. Example: `--downgrade 14.3 --dont-restore`.
 
       --fixBoot          : Boots the device using fsboot.
@@ -54,6 +56,8 @@ alright if you didn't understand well before, first: extract your ipsw by using 
 
 # importants things
 
+- downgrading ios 16 to 14 or another version, you will have to bypass the setup somehow. good luck on it.
+
 - on ios 13 the touch id doesn't work so the home button on iphone 7 will not work sadly.
 
 - you can't downgrade to ios 14.2 lower on a11 devices
@@ -64,8 +68,11 @@ alright if you didn't understand well before, first: extract your ipsw by using 
    - futurerestore --exit-recovery
    - irecovery -n
 
-# fix some problems to boot
+# fix some problems
+
 - please execute wikiproxy.py manually if it gives problem with server key.
+
+- if the error still after above fix, if this happend to you when you are downgrading with futurerestore again please add this arg --keyServer for example ./downr1n.sh --downgrade 14.5 --keyServer.
 
 - remember if you will use the next command or will activate localboot it is better that you first downgrade and when you success you can use --jailbreak to jailbreak the device and it will ask you to activate localboot path. why do this because the localboot need to be executed after --jailbreak
 
