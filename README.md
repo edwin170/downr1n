@@ -1,8 +1,6 @@
 # downr1n
 Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 15, 14 and 13.
 
-NOTE: iOS 16 on a11 need that you replace LLB check https://github.com/edwin170/downr1n#issues-putting-device-in-pwndfu-mode for more info.
-
 In general, dual booting is a better option than downgrading if you have the necessary storage. if you activate the localboot path it would be ultra better believe me xd.
 
 # Usage
@@ -44,15 +42,6 @@ The various command-line options are as follows:
 # Issues Putting Device in PwnDFU Mode
 
 - A DFU mode exists where the device's screen is black. However, when downgrading the device, recovery mode also turns black. To put the device into PwnDFU mode, you need to put it into real DFU mode by pressing poweroff+(volume down or home button). Look for a tutorial on YouTube to understand how. Once in PwnDFU mode, execute ./binaries/$(uname)/gaster pwn to succeed. If the device is not in DFU mode, it will loop.
-
-- If you want to fix recovery mode, try copying the firmware/all_flash/ iboot and llb files from an IPSW of the version you are or were on before the downgrade to the IPSW for the iOS that you want to downgrade. This should restore recovery mode.
-
-<details><summary>didn't understand ?</summary>
-
-alright if you didn't understand well before, first: extract your ipsw by using this command, 1: cd ipsw/, 2: unzip *.ipsw -d extracted, then it is going to extract everyfile from the ipsw so now second: take the ipsw from the lastest ios or the ios that you were before (i mean the ios when the blobs were taken) and extract it and go to extracted/firmware/all_flash there will be some files called iboot and llb (only the ones that has .im4p at the end) takes that file and put it on the downr1n ipsw (this ipsw will be the ios version that you want to downgrade with) and replace the llb and iboot with the laster ios ipsw ones and then put the mod one into the ipsw/ directory on downr1n and try downgrade with it, (important: we did unzip *.ipsw -d extracted at the start because we mustn't modify the iboot file that will be used to boot ios 14 or the ios that we want downgrade if we replace that with the one from the lastest ios, ios 14 will not work (because ofc they are different version)).
-
-</p>
-</details>
 
 # importants things
 
