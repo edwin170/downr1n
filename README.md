@@ -59,7 +59,7 @@ The various command-line options are as follows:
 
 # fix some problems
 
-- please execute wikiproxy.py manually if it gives problem with server key.
+- please execute wikiproxy.py manually if it gives problem with server key. for ex: sudo python3 wikiproxy.py
 
 - if the error still after above fix, if this happend to you when you are downgrading with futurerestore again please add this arg --keyServer for example ./downr1n.sh --downgrade 14.5 --keyServer.
 
