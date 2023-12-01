@@ -871,8 +871,12 @@ if [ true ]; then
     echo "[*] Mounting filesystems ..."
     if [[ "$version" = "13."* ]]; then
         remote_cmd "/sbin/mount_apfs /dev/disk0s1s1 /mnt1"
-    else
-        remote_cmd "/usr/bin/mount_filesystems  2>/dev/null"
+    fi
+
+    if [ ! "$downgrade" = "1" ] && [[ ! "$version" = "13."* ]]; then
+        remote_cmd "/usr/bin/mount_filesystems 2>/dev/null"
+    elif [ "$downgrade" = "1" ] && [[ ! "$version" = "13."* ]]; then
+        remote_cmd "/usr/bin/mount_filesystems_nouser 2>/dev/null"
     fi
 
     has_active=$(remote_cmd "ls /mnt6/active" 2> /dev/null)
@@ -1212,45 +1216,51 @@ if [ true ]; then
         cp -v work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
 
         echo "[*] Sucess Patching the boot files"
-        echo "[*] Patching the llb in the ipsw to avoid false dfu mode"
         
-        echo "[=] Hi, please i need that you write the ios version that this device is on or the version of the ios that it was on (if this device is already downgraded), most of the time is the lastest version of ios. write 0 if you want to skip this (it is not recommended to skip this as this can avoid false dfu mode)"
+        echo "[*] Checking if the llb was already replaced"
+
+        if [ ! -e "boot/${deviceid}/.llbreplaced" ]; then
+            echo "[*] Patching the llb in the ipsw to avoid false dfu mode"
+            echo "[=] Hi, please i need that you write the ios version that this device is on or the version of the ios that it was on (if this device is already downgraded), most of the time is the lastest version of ios. write 0 if you want to skip this (it is not recommended to skip this as this can avoid false dfu mode)"
         
-        while true
-        do
-            if [ ! "$version" = "$SystemVersion" ]; then
-                echo "Version detected!. we are gonna use $SystemVersion"
-                ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$SystemVersion'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
-            else
-                read result
-                if [ "$result" = "0" ]; then
-                    echo "SKIPPING ..."
+            while true
+            do
+                if [ ! "$version" = "$SystemVersion" ]; then
+                    echo "Version detected!. we are gonna use $SystemVersion"
+                    ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$SystemVersion'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
+                else
+                    read result
+                    if [ "$result" = "0" ]; then
+                        echo "SKIPPING ..."
+                        break
+                    fi
+                    ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$result'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
+                fi
+
+                sleep 1
+
+                cd work/
+                if [ $("$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswLLB" >/dev/null) ]; then
+                    echo "failed to download LLB"
+                fi
+                cd ..
+
+                if [ ! -e "work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" ]; then
+                    echo "[-] ERROR downloading the llb please check the ios version and write it again. if this error happens a lot of time please use 0 to skip llb"
+                else
+                    echo "[*] LLB downloaded correctly"
+                    echo "[*] putting this LLB into the ipsw"
+                    cp -f work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//') "$extractedIpsw/Firmware/all_flash/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')"
+                    cd $extractedIpsw
+                    zip --update "$mainDir/$ipsw" Firmware/all_flash/"$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" Firmware/all_flash//$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')
+                    cd $mainDir
+                    echo "[*] Replaced LLB suscessfully"
+
+                    touch "boot/${deviceid}/.llbreplaced"
                     break
                 fi
-                ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$result'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
-            fi
-
-            sleep 1
-            
-            cd work/
-            if [ $("$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswLLB" >/dev/null) ]; then
-                echo "failed to download LLB"
-            fi
-            cd ..
-
-            if [ ! -e "work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" ]; then
-                echo "[-] ERROR downloading the llb please check the ios version and write it again. if this error happens a lot of time please use 0 to skip llb"
-            else
-                echo "[*] LLB downloaded correctly"
-                echo "[*] putting this LLB into the ipsw"
-                cp -f work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//') "$extractedIpsw/Firmware/all_flash/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')"
-                cd $extractedIpsw
-                zip --update "$mainDir/$ipsw" Firmware/all_flash/"$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" Firmware/all_flash//$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')
-                cd $mainDir
-                echo "[*] Replaced LLB suscessfully"
-                break
-            fi
-        done
+            done
+        fi
         sleep 1
         
         set +e
