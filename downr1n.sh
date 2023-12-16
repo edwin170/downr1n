@@ -805,6 +805,16 @@ if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
 
 fi    
 
+version_code=""
+
+if [ "$downgrade" = "1" ]; then
+    if [ "$os" = 'Darwin' ]; then
+        version_code=$(/usr/bin/plutil -extract "ProductBuildVersion" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)
+    else
+        version_code=$("$dir"/PlistBuddy work/BuildManifest.plist -c "Print ProductBuildVersion" | sed 's/"//g')
+    fi
+    
+fi
 
 if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     # extracting ipsw
