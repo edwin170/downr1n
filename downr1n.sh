@@ -1129,7 +1129,7 @@ if [ true ]; then
             mkdir -p $TMPDIR/futurerestore
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBECFuture.dec >/dev/null
-            "$dir"/iBoot64Patcher work/iBECFuture.dec work/iBECFuture.patched b "rd=md0 nand-enable-reformat=0x1 -v -restore debug=0x2014e keepsyms=0x1 amfi=0xff amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1" -n >/dev/null
+            "$dir"/iBoot64Patcher work/iBECFuture.dec work/iBECFuture.patched -b "rd=md0 nand-enable-reformat=0x1 -v -restore debug=0x2014e keepsyms=0x1 amfi=0xff amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1" -n >/dev/null
             "$dir"/img4 -i work/iBECFuture.patched -o "$TMPDIR/futurerestore/ibec.$model.$version_code.patched.img4" -M work/IM4M -A -T ibec >/dev/null
             cp -av work/iBSS.img4 $TMPDIR/futurerestore/ibss.$model.$version_code.patched.img4
             echo "sucessfully create files for futurerestore"
