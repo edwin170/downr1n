@@ -7,7 +7,7 @@ if [ "$(uname)" == "Linux" ]; then
         exec sudo ./downr1n.sh $@
     fi
 else
-    if [ "$EUID" -e 0 ]; then
+    if [ "$EUID" = "0" ]; then
         echo "Please don't run as root on macOS. It just breaks permissions."
         exit 1
     fi
