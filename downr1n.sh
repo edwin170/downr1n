@@ -7,8 +7,10 @@ if [ "$(uname)" == "Linux" ]; then
         exec sudo ./downr1n.sh $@
     fi
 else
-    echo "Please don't run as root on macOS. It just breaks permissions."
-    exit 1
+    if [ "$EUID" -e 0 ]; then
+        echo "Please don't run as root on macOS. It just breaks permissions."
+        exit 1
+    fi
 fi
 
 mkdir -p logs
