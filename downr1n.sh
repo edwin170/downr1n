@@ -276,6 +276,7 @@ _wait() {
     fi
 }
 
+
 _dfuhelper() {
     if [ "$(get_device_mode)" = "dfu" ]; then
         echo "[*] Device already on dfu mode"
@@ -531,11 +532,27 @@ if [ "$cmd_not_found" = "1" ]; then
 fi
 
 # Check for pyimg4
-if ! python3 -c 'import pkgutil; exit(not pkgutil.find_loader("lzss") and not pkgutil.find_loader("pyimg4"))'; then
-    echo '[-] One or more required modules are not installed. Press any key to install them, or press ctrl + c to cancel'
-    read -n 1 -s
-    python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4 pyliblzfse lzss -U
-fi
+packages=("pyimg4")
+ for package in "${packages[@]}"; do
+     if ! python3 -c "import pkgutil; exit(not pkgutil.find_loader('$package'))"; then
+        echo "[-] $package is not installed. we can installl it for you, press any key to start installing $package, or press ctrl + c to cancel"
+        read -n 1 -s
+        python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4 pyliblzfse lzss -U
+     fi
+done
+
+ # LZSS gets its own check
+packages=("lzss")
+for package in "${packages[@]}"; do
+    if ! python3 -c "import pkgutil; exit(not pkgutil.find_loader('$package'))"; then
+        echo "[-] $package is not installed. we can installl it for you, press any key to start installing $package, or press ctrl + c to cancel"
+        read -n 1 -s
+        git clone https://github.com/yyogo/pylzss "$dir"/pylzss
+        cd "$dir"/pylzss
+        python3 "$dir"/pylzss/setup.py install
+        rm -rf "$dir"/pylzss
+    fi
+done
 
 # Check if futurerestore exists
 if [ ! -e "$dir"/futurerestore ]; then 
