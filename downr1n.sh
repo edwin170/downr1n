@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+if [ "$(uname)" == "Linux" ]; then
+    if [ "$EUID" -ne 0 ]; then
+    	echo "You have to run this as root on Linux."
+     	echo "Please type your password"
+        exec sudo ./downr1n.sh $@
+    fi
+else
+    if [ "$EUID" = "0" ]; then
+        echo "Please don't run as root on macOS. It just breaks permissions."
+        exit 1
+    fi
+fi
+
 mkdir -p logs
 mkdir -p boot
 mkdir -p ipsw/extracted
