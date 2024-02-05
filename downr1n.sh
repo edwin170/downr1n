@@ -551,6 +551,7 @@ for package in "${packages[@]}"; do
         cd "$dir"/pylzss
         git checkout "8efcda0"
         python3 "$dir"/pylzss/setup.py install
+        cd $mainDir
         rm -rf "$dir"/pylzss
     fi
 done
