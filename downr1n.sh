@@ -551,7 +551,7 @@ for package in "${packages[@]}"; do
         cd "$dir"/pylzss
         git checkout "8efcda0"
         python3 "$dir"/pylzss/setup.py install
-        cd $mainDir
+        cd "$mainDir"
         rm -rf "$dir"/pylzss
     fi
 done
@@ -1295,7 +1295,7 @@ if [ true ]; then
                     cp -f work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//') "$extractedIpsw/Firmware/all_flash/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')"
                     cd $extractedIpsw
                     zip --update "$mainDir/$ipsw" Firmware/all_flash/"$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" Firmware/all_flash//$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')
-                    cd $mainDir
+                    cd "$mainDir"
                     echo "[*] Replaced LLB suscessfully"
 
                     touch "boot/${deviceid}/.llbreplaced"
