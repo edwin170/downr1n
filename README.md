@@ -1,12 +1,12 @@
 # downr1n
 Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 15, 14 and 13.
 
-In general, dual booting is a better option than downgrading if you have the necessary storage. if you activate the localboot path it would be ultra better believe me xd.
+there is dualra1n too, which is a dualboot for ios like having two different ios [dualra1n](https://github.com/dualra1n/dualra1n), i would recommend more dualra1n as it is very stable.
 
 # Usage
 1: Download the IPSW file and place it in the ipsw/ directory.
 
-2: Execute the script without using 'sudo' on Linux. if it doesn't work please use sudo then.
+2: execute: ./downr1n.sh --downgrade 14.3.
 
 Example: ./downr1n.sh --downgrade 14.3
 
@@ -14,9 +14,7 @@ The various command-line options are as follows:
 
       --downgrade        : Downgrade your device to iOS 14 tethered.
 
-      --dfuhelper        : A helper tool to transition A11 devices from recovery mode to DFU mode.
-
-      --jailbreak        : Jailbreak with pogo. Usage: `./downr1n.sh --jailbreak 14.8`.
+      --jailbreak        : Jailbreak with dualra1n-loader. Usage: `./downr1n.sh --jailbreak 14.8`.
 
       --taurine          : Jailbreak with taurine. Usage: `./downr1n.sh --jailbreak 14.3 --taurine`.
 
@@ -25,8 +23,6 @@ The various command-line options are as follows:
       --keyServer         use this option to downgrade when the keys server is in problem. only on MacOS. use ex: --downgrade 14.8 --keyServer 
 
       --dont-restore     : Avoids using futurerestore, this can be used to only create boot files. Example: `--downgrade 14.3 --dont-restore`.
-
-      --fixBoot          : Boots the device using fsboot.
 
       --debug            : Debug the script.
 
@@ -69,11 +65,9 @@ The various command-line options are as follows:
 - Join my discord server: [Dualra1nServer](https://discord.gg/Gjs2P7FBuk)
 
 # How to Jailbreak?
-- Jailbreak with dualra1n-loader: ./downr1n --jailbreak (YourVer = 14.3). Note: this does not actually jailbreak the device. When I say "jailbreak," I'm referring to the process of installing Sileo and bootstrapping the device. Dualra1n-loader only installs Sileo and bootstraps with the kernel patch.
+- Jailbreak with dualra1n-loader: ./downr1n --jailbreak (YourVer = 14.3). Note: this does not actually jailbreak the device. When I say "jailbreak," I'm referring to the process of installing Sileo and bootstrapping the device. Dualra1n-loader only installs Sileo and bootstraps with the kpf kernel patch. (you will be able to use tweaks and most of things as normal).
 
-- Taurine: ./downr1n --jailbreak (YourVer = 14.3) --taurine. Note: this is not recommended.
-
-# This project was created with love by Edwin :)
+- Taurine: ./downr1n --jailbreak (ex: 14.3 or YouVers) --taurine.
 
 # Credits
 
