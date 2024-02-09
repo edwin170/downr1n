@@ -1267,7 +1267,7 @@ if [ true ]; then
         
             while true
             do
-                if [ ! "$version" = "$SystemVersion" ] && [ ! "$version" = "" ]; then
+                if [ ! "$version" = "$SystemVersion" ] && [ ! "$SystemVersion" = "" ]; then
                     echo "Version detected!. we are gonna use $SystemVersion"
                     ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$SystemVersion'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
                 else
