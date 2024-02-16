@@ -383,7 +383,7 @@ _kill_if_running() {
 _runFuturerestore() {
     read -p "Press ENTER to continue with futurerestore, your device will start to restoring <-"
     rm -rf /tmp/futurerestore/
-    if [ "$os" == "Linux"]; then
+    if [ "$os" == "Linux" ]; then
         sudo -u $SUDO_USER \
         "$dir"/futurerestore -t blobs/"$deviceid"-"$version".shsh2 --use-pwndfu --skip-blob \
         --rdsk work/rdsk.im4p --rkrn work/krnl.im4p \
