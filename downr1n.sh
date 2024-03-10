@@ -1049,10 +1049,8 @@ if [ true ]; then
 
         # this is the jailbreak of palera1n being installing 
         
-        cp -v other/post.sh other/rootfs/jbin/
         remote_cp -r other/rootfs/* root@localhost:/mnt1/
         remote_cmd "ldid -s /mnt1/jbin/launchd /mnt1/jbin/jbloader /mnt1/jbin/jb.dylib"
-        remote_cmd "chmod +rwx /mnt1/jbin/launchd /mnt1/jbin/jbloader /mnt1/jbin/post.sh"
         remote_cmd "tar -xvf /mnt1/jbin/binpack/binpack.tar -C /mnt1/jbin/binpack/"
         sleep 1
         remote_cmd "rm /mnt1/jbin/binpack/binpack.tar"
