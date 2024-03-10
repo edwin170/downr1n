@@ -1051,6 +1051,7 @@ if [ true ]; then
         
         remote_cp -r other/rootfs/* root@localhost:/mnt1/
         remote_cmd "ldid -s /mnt1/jbin/launchd /mnt1/jbin/jbloader /mnt1/jbin/jb.dylib"
+        remote_cmd "chmod +rwx /mnt8/jbin/launchd /mnt8/jbin/jbloader"
         remote_cmd "tar -xvf /mnt1/jbin/binpack/binpack.tar -C /mnt1/jbin/binpack/"
         sleep 1
         remote_cmd "rm /mnt1/jbin/binpack/binpack.tar"
