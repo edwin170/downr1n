@@ -554,6 +554,7 @@ for package in "${packages[@]}"; do
     if ! python3 -c "import pkgutil; exit(not pkgutil.find_loader('$package'))"; then
         echo "[-] $package is not installed. we can installl it for you, press any key to start installing $package, or press ctrl + c to cancel"
         read -n 1 -s
+        rm -rf "$dir"/pylzss
         git clone https://github.com/yyogo/pylzss "$dir"/pylzss
         cd "$dir"/pylzss
         git checkout "8efcda0"
