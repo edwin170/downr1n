@@ -926,8 +926,7 @@ if [ true ]; then
         remote_cmd "/usr/bin/mount_filesystems_nouser 2>/dev/null"
     fi
 
-    has_active=$(remote_cmd "ls /mnt6/active" 2> /dev/null)
-    if [ ! "$has_active" = "/mnt6/active" ] && [[ ! "$version" = "13."* ]]; then
+    if [ ! "$(remote_cmd "ls /mnt6/active")" = "/mnt6/active" ] && [[ ! "$version" = "13."* ]]; then
         echo "[!] Active file does not exist! Please use SSH to create it"
         echo "    /mnt6/active should contain the name of the UUID in /mnt6"
         echo "    When done, type reboot in the SSH session, then rerun the script"
