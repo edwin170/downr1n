@@ -121,12 +121,6 @@ parse_opt() {
         --dont-restore)
             dontRestore=1
             ;;
-        --localboot)
-            local=1
-            ;;
-        --fsboot)
-            fsboot=1
-            ;;
         --dfuhelper)
             dfuhelper=1
             ;;
@@ -453,16 +447,18 @@ _boot() {
 
     if [[ ! "$cpid" == *"0x801"* ]]; then
         "$dir"/irecovery -f "boot/${deviceid}/iBSS.img4"
-        sleep 1
+        if [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then
+            sleep 10
+        else
+            sleep 2
+        fi
     fi
 
     "$dir"/irecovery -f "boot/${deviceid}/iBEC.img4"
-    sleep 3
-    
-    if [ "$local" = "1" ]; then 
-        echo "booting ..."
-        echo "your devicd should be booting into the ios using localboot:)"
-        exit;
+    if [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then
+        sleep 10
+    else
+        sleep 4
     fi
 
     if [[ "$cpid" == *"0x801"* ]]; then
@@ -674,6 +670,10 @@ deviceid=$(_info recovery PRODUCT)
 echo "Detected cpid, your cpid is $cpid"
 echo "Detected model, your model is $model"
 echo "Detected deviceid, your deviceid is $deviceid"
+
+if [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then
+    echo "[-] Please downr1n is not recommended on A8/A8X so instead try dualra1n with --downgrade option if you want a downgrade"
+fi
 
 if [ "$dfuhelper" = "1" ]; then
     echo "[*] Running DFU helper"
@@ -1146,17 +1146,8 @@ if [ true ]; then
         
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBoot[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/iBEC.dec >/dev/null
         sleep 1
-        
-        if [ "$local" = "1" ]; then
-            echo "[*] Applying patches to the iboot"
-            if [ "$os" = 'Linux' ]; then
-                sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
-            else
-                LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
-            fi
-        fi
 
-        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n "$(if [ "$local" = "1" ]; then echo "-l"; fi)" >/dev/null
+        "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n >/dev/null
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
 
         if [ "$keyServer" = "1" ]; then

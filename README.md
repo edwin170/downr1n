@@ -41,6 +41,8 @@ The various command-line options are as follows:
 
 # importants things
 
+- A8/A8x devices downr1n is not recommended please instead use dualra1n with --downgrade option
+
 - downgrading ios 16 to 14 or another version, you will have to bypass the setup somehow. good luck on it.
 
 - on ios 13 the touch id doesn't work so the home button on iphone 7 will not work sadly.
