@@ -78,20 +78,16 @@ Usage: $0 [options] [vers] [ipsw] [ subcommand ] vers = the version that you wan
 iOS 15 - 13.0 downgrade tool ./downr1n --downgrade 15.7 (the ios that you want to downgrade with) ipsw 
 
 Options:
-    --downgrade         downgrade tethered your device to ios 14. you can use --localboot or --fsboot in order to fix some problems if you had them 
-    --dfuhelper         A helper to help get A11 devices into DFU mode from recovery mode
-    --jailbreak         jailbreak with pogo. usage ./downr1n --jailbreak 14.8 
-    --taurine           jailbreak with taurine. usage ./downr1n --jailbreak 14.3 --taurine
+    --downgrade         downgrade tethered your device.
+    --jailbreak         jailbreak with dualra1n-loader. usage ./downr1n.sh --jailbreak 14.8 
+    --taurine           jailbreak with taurine. usage ./downr1n.sh --jailbreak 14.3 --taurine
     --boot              this boot the device.
-    --keyServer         use this option to downgrade when the keys server is in problem. only on MacOS. use ex: --downgrade 14.8 --keyServer 
-    --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files
+    --keyServer         use this option to downgrade when the keys server is in problem. use ex: --downgrade 14.8 --keyServer
+    --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files, use ex: --downgrade 14.8 --dont-restore
     --debug             Debug the script
 
 Subcommands:
     clean               clean the downgrade tool in order to downgrade again.
-
-
-
 EOF
 }
 
@@ -489,6 +485,20 @@ _boot() {
     exit;
 }
 
+check_and_install_package() {
+    local package=$1
+    local required_version=$2
+    local installed_version=$(python3 -c "import pkg_resources; print(pkg_resources.get_distribution('$package').version)" 2>/dev/null || echo "not installed")
+
+    if [ "$installed_version" != "$required_version" ]; then
+        echo "[-] $package version $required_version is not installed (current version: $installed_version). We can install it for you. Press any key to start installing $package $required_version, or press Ctrl + C to cancel."
+        read -n 1 -s
+        python3 -m pip install "$package==$required_version"
+    else
+        echo "[+] $package version $required_version is already installed."
+    fi
+}
+
 _exit_handler() {
     if [ "$os" = "Darwin" ]; then
         killall -CONT AMPDevicesAgent AMPDeviceDiscoveryAgent MobileDeviceUpdater || true
@@ -531,31 +541,12 @@ if [ "$cmd_not_found" = "1" ]; then
     exit 1
 fi
 
-# Check for pyimg4
-packages=("pyimg4")
- for package in "${packages[@]}"; do
-     if ! python3 -c "import pkgutil; exit(not pkgutil.find_loader('$package'))"; then
-        echo "[-] $package is not installed. we can installl it for you, press any key to start installing $package, or press ctrl + c to cancel"
-        read -n 1 -s
-        python3 -m pip install fastapi aiohttp ujson wikitextparser uvicorn pyimg4 pyliblzfse lzss -U
-     fi
-done
+# Check and install pyimg4
+check_and_install_package "pyimg4" "0.8"
 
- # LZSS gets its own check
-packages=("lzss")
-for package in "${packages[@]}"; do
-    if ! python3 -c "import pkgutil; exit(not pkgutil.find_loader('$package'))"; then
-        echo "[-] $package is not installed. we can installl it for you, press any key to start installing $package, or press ctrl + c to cancel"
-        read -n 1 -s
-        rm -rf "$dir"/pylzss
-        git clone https://github.com/yyogo/pylzss "$dir"/pylzss
-        cd "$dir"/pylzss
-        git checkout "8efcda0"
-        python3 "$dir"/pylzss/setup.py install
-        cd "$mainDir"
-        rm -rf "$dir"/pylzss
-    fi
-done
+# Check and install pylzss
+check_and_install_package "pylzss" "0.3.4"
+
 
 # Check if futurerestore exists
 if [ ! -e "$dir"/futurerestore ]; then 
@@ -721,6 +712,7 @@ if [ ! $(ls ipsw/*.ipsw) ]; then
                 ;;
         esac
     done
+
     # downloader by @sasa
     echo "[*] Downloading ipsw, it may take few minutes."
     curl -Lo ipsw/$deviceid-$version.ipsw "$ipswurl" "-#"
