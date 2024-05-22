@@ -490,7 +490,10 @@ check_and_install_package() {
     local required_version=$2
     local installed_version=$(python3 -c "import pkg_resources; print(pkg_resources.get_distribution('$package').version)" 2>/dev/null || echo "not installed")
 
-    if [ "$installed_version" != "$required_version" ]; then
+    if [ -z "$required_version" ]; then
+        echo "[-] No version specified for $package. Installing the latest version."
+        python3 -m pip install "$package"
+    elif [ "$installed_version" != "$required_version" ]; then
         echo "[-] $package version $required_version is not installed (current version: $installed_version). We can install it for you. Press any key to start installing $package $required_version, or press Ctrl + C to cancel."
         read -n 1 -s
         python3 -m pip install "$package==$required_version"
@@ -498,6 +501,7 @@ check_and_install_package() {
         echo "[+] $package version $required_version is already installed."
     fi
 }
+
 
 _exit_handler() {
     if [ "$os" = "Darwin" ]; then
@@ -546,6 +550,9 @@ check_and_install_package "pyimg4" "0.8"
 
 # Check and install pylzss
 check_and_install_package "pylzss" "0.3.4"
+
+# Check and install pyliblzfse
+check_and_install_package "pyliblzfse"
 
 
 # Check if futurerestore exists
