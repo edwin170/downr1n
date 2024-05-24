@@ -925,15 +925,15 @@ if [ true ]; then
         remote_cmd "/usr/bin/mount_filesystems_nouser 2>/dev/null"
     fi
 
-    if [ ! "$(remote_cmd "ls /mnt6/active")" = "/mnt6/active" ] && [[ ! "$version" = "13."* ]]; then
-        echo "[!] Active file does not exist! Please use SSH to create it"
-        echo "    /mnt6/active should contain the name of the UUID in /mnt6"
-        echo "    When done, type reboot in the SSH session, then rerun the script"
-        echo "    ssh root@localhost -p 2222"
+    has_active=$(remote_cmd "ls /mnt6/active" 2> /dev/null)
+    if [ ! "$has_active" = "/mnt6/active" ]; then
+        printr "[!] Active file does not exist! Please use SSH to create it"
+        printr "    /mnt6/active should contain the name of the UUID in /mnt6"
+        printr "    When done, type reboot in the SSH session, then rerun the script"
+        printr "    ssh root@localhost -p 2222"
         exit
-    else
-        active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
     fi
+    active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
     
     mkdir -p "boot/${deviceid}"
 
@@ -966,6 +966,9 @@ if [ true ]; then
             python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw >/dev/null
         fi
         
+        "$dir"/img4 -i work/kernelcache -o work/kcache.raw >/dev/null
+
+
         "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched $(if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi) $(if [[ "$version" = "14."* ]]; then echo "-b"; fi) $(if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi) >/dev/null
 
         sysDir="/mnt6/$active/"
@@ -1069,6 +1072,8 @@ if [ true ]; then
     else
         python3 -m pyimg4 im4p extract -i work/kernelcache -o work/kcache.raw >/dev/null
     fi
+
+    "$dir"/img4 -i work/kernelcache -o work/kcache.raw >/dev/null
 
     echo "[*] extracted"
 
