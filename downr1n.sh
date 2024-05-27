@@ -1,14 +1,29 @@
 #!/usr/bin/env bash
 
+printb() 
+{
+  echo -e "\033[1;36m$1\033[0m"
+}
+
+printg()
+{
+    echo -e "\033[1;32m$1\033[0m"
+}
+
+printr() 
+{
+  echo -e "\033[1;31m$1\033[0m"
+}
+
 if [ "$(uname)" == "Linux" ]; then
     if [ "$EUID" -ne 0 ]; then
-    	echo "You have to run this as root on Linux."
-     	echo "Please type your password"
+    	printg "You have to run this as root on Linux."
+     	printg "Please type your password"
         exec sudo ./downr1n.sh $@
     fi
 else
     if [ "$EUID" = "0" ]; then
-        echo "Please don't run as root on macOS. It just breaks permissions."
+        printr "Please don't run as root on macOS. It just breaks permissions."
         exit 1
     fi
 fi
@@ -26,7 +41,7 @@ cd ..
 
 {
 
-echo "[*] Command ran:`if [ $EUID = 0 ]; then echo " sudo"; fi` ./downr1n.sh $@"
+printb "[*] Command ran:`if [ $EUID = 0 ]; then printb " sudo"; fi` ./downr1n.sh $@"
 
 
 
@@ -128,7 +143,7 @@ parse_opt() {
             exit 0
             ;;
         *)
-            echo "[-] Unknown option $1. Use $0 --help for help."
+            printr "[-] Unknown option $1. Use $0 --help for help."
             exit 1;
     esac
 }
@@ -159,7 +174,7 @@ parse_cmdline() {
                 parse_arg "$arg";
             fi
         else
-            echo "[-] Too many arguments. Use $0 --help for help.";
+            printr "[-] Too many arguments. Use $0 --help for help.";
             exit 1;
         fi
     done
@@ -181,7 +196,7 @@ _info() {
 _pwn() {
     pwnd=$(_info recovery PWND)
     if [ "$pwnd" = "" ]; then
-        echo "[*] Pwning device"
+        printg "[*] Pwning device"
         "$dir"/gaster pwn
         sleep 2
         #"$dir"/gaster reset
@@ -190,7 +205,7 @@ _pwn() {
 }
 
 _reset() {
-        echo "[*] Resetting DFU state"
+        printg "[*] Resetting DFU state"
         "$dir"/gaster reset
 }
 
@@ -234,7 +249,7 @@ get_device_mode() {
     if [ "$device_count" = "0" ]; then
         device_mode=none
     elif [ "$device_count" -ge "2" ]; then
-        echo "[-] Please attach only one device" > /dev/tty
+        printr "[-] Please attach only one device" > /dev/tty
         kill -30 0
         exit 1;
     fi
@@ -251,7 +266,7 @@ get_device_mode() {
 
 _wait() {
     if [ "$(get_device_mode)" != "$1" ]; then
-        echo "[*] Waiting for device in $1 mode"
+        printg "[*] Waiting for device in $1 mode"
     fi
 
     while [ "$(get_device_mode)" != "$1" ]; do
@@ -266,7 +281,7 @@ _wait() {
 
 _dfuhelper() {
     if [ "$(get_device_mode)" = "dfu" ]; then
-        echo "[*] Device already on dfu mode"
+        printg "[*] Device already on dfu mode"
         return;
     fi
 
@@ -277,8 +292,8 @@ _dfuhelper() {
     else
         step_one="Hold home + power button"
     fi
-    echo "[*] To get into DFU mode, you will be guided through 2 steps:"
-    echo "[*] Press any key when ready for DFU mode"
+    printg "[*] To get into DFU mode, you will be guided through 2 steps:"
+    printg "[*] Press any key when ready for DFU mode"
     read -n 1 -s
     step 3 "Get ready"
     step 4 "$step_one" &
@@ -297,9 +312,9 @@ _dfuhelper() {
     fi
 
     if [ "$(get_device_mode)" = "dfu" ]; then
-        echo "[*] Device entered DFU!"
+        printg "[*] Device entered DFU!"
     else
-        echo "[-] Device did not enter DFU mode, try again"
+        printr "[-] Device did not enter DFU mode, try again"
        _detect
        _dfuhelper
     fi
@@ -311,8 +326,8 @@ _do_localboot() {
         read -r answer
         case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
             yes)
-                echo "[*] You answered YES. so Activating the iBoot localboot path..."
-                echo '[*] Patching the kernel to krnl'
+                printg "[*] You answered YES. so Activating the iBoot localboot path..."
+                printg '[*] Patching the kernel to krnl'
                 if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
                     python3 -m pyimg4 im4p create -i work/$(if [ "$taurine" = "1" ]; then echo "kcache.patched"; else echo "kcache.patchedB"; fi)  -o work/krnl.im4p -f krnl --extra work/kpp.bin --lzss >/dev/null
                 else
@@ -333,11 +348,11 @@ _do_localboot() {
                 break
                 ;;
             no)
-                echo "You answered NO. so Not activating the iBoot localboot path."
+                printg "You answered NO. so Not activating the iBoot localboot path."
                 break
                 ;;
             *)
-                echo "Invalid answer."
+                printg "Invalid answer."
                 usage
                 ;;
         esac
@@ -345,14 +360,14 @@ _do_localboot() {
 }
 
 usage() {
-    echo "Please answer with YES or NO (case-insensitive)."
+    printb "Please answer with YES or NO (case-insensitive)."
 }
 
 ask() {
-    echo "Do you want to activate the iBoot localboot path? YES or NO."
-    echo "Activating this path can help avoid a lot of problems and is generally more stable."
-    echo "If you activate it, you will need to use --boot again after it finishes to boot with localboot."
-    echo "If localboot breaks your boot process (like you can't boot), please execute ./downr1n.sh --downgrade (version) --dont-restore to fix the boot files."
+    printg "Do you want to activate the iBoot localboot path? YES or NO."
+    printg "Activating this path can help avoid a lot of problems and is generally more stable."
+    printg "If you activate it, you will need to use --boot again after it finishes to boot with localboot."
+    printg "If localboot breaks your boot process (like you can't boot), please execute ./downr1n.sh --downgrade (version) --dont-restore to fix the boot files."
 }
 
 _kill_if_running() {
@@ -384,26 +399,26 @@ _runFuturerestore() {
 
 _detect() {
     # Get device's iOS version from ideviceinfo if in normal mode
-    echo "[*] Waiting for devices"
+    printg "[*] Waiting for devices"
     while [ "$(get_device_mode)" = "none" ]; do
         sleep 1;
     done
-    echo $(echo "[*] Detected $(get_device_mode) mode device" | sed 's/dfu/DFU/')
+    echo $(printg "[*] Detected $(get_device_mode) mode device" | sed 's/dfu/DFU/')
 
     if grep -E 'pongo|checkra1n_stage2|diag' <<< "$(get_device_mode)"; then
-        echo "[-] Detected device in unsupported mode '$(get_device_mode)'"
+        printr "[-] Detected device in unsupported mode '$(get_device_mode)'"
         exit 1;
     fi
 
     if [ "$(get_device_mode)" != "normal" ] && [ -z "$version" ] && [ "$dfuhelper" != "1" ]; then
-        echo "[-] You must pass the version your device is on when not starting from normal mode"
+        printr "[-] You must pass the version your device is on when not starting from normal mode"
         exit
     fi
 
     if [ "$(get_device_mode)" = "ramdisk" ]; then
         # If a device is in ramdisk mode, perhaps iproxy is still running?
         _kill_if_running iproxy
-        echo "[*] Rebooting device in SSH Ramdisk"
+        printg "[*] Rebooting device in SSH Ramdisk"
         if [ "$os" = 'Linux' ]; then
             sudo "$dir"/iproxy 2222 22 >/dev/null &
         else
@@ -419,12 +434,12 @@ _detect() {
         version=${version:-$(_info normal ProductVersion)}
         arch=$(_info normal CPUArchitecture)
         if [ "$arch" = "arm64e" ]; then
-            echo "[-] dualboot doesn't, and never will, work on non-checkm8 devices"
+            printr "[-] dualboot doesn't, and never will, work on non-checkm8 devices"
             exit
         fi
         echo "Hello, $(_info normal ProductType) on $version!"
 
-        echo "[*] Switching device into recovery mode..."
+        printg "[*] Switching device into recovery mode..."
         "$dir"/ideviceenterrecovery $(_info normal UniqueDeviceID)
         _wait recovery
     fi
@@ -436,7 +451,7 @@ _boot() {
     _reset
     sleep 1
     
-    echo "[*] Booting device"
+    printg "[*] Booting device"
 
     "$dir"/irecovery -f "blobs/"$deviceid"-"$version".shsh2"
     sleep 1
@@ -491,10 +506,10 @@ check_and_install_package() {
     local installed_version=$(python3 -c "import pkg_resources; print(pkg_resources.get_distribution('$package').version)" 2>/dev/null || echo "not installed")
 
     if [ -z "$required_version" ]; then
-        echo "[-] No version specified for $package. Installing the latest version."
+        printr "[-] No version specified for $package. Installing the latest version."
         python3 -m pip install "$package"
     elif [ "$installed_version" != "$required_version" ]; then
-        echo "[-] $package version $required_version is not installed (current version: $installed_version). We can install it for you. Press any key to start installing $package $required_version, or press Ctrl + C to cancel."
+        printr "[-] $package version $required_version is not installed (current version: $installed_version). We can install it for you. Press any key to start installing $package $required_version, or press Ctrl + C to cancel."
         read -n 1 -s
         python3 -m pip install "$package==$required_version"
     else
@@ -509,7 +524,7 @@ _exit_handler() {
     fi
 
     [ $? -eq 0 ] && exit
-    echo "[-] An error occurred"
+    printr "[-] An error occurred"
 
     if [ -d "logs" ]; then
         cd logs
@@ -517,7 +532,7 @@ _exit_handler() {
         cd ..
     fi
 
-    echo "[*] A failure log has been made. If you're going ask for help, please attach the latest log."
+    printg "[*] A failure log has been made. If you're going ask for help, please attach the latest log."
 }
 trap _exit_handler EXIT
 
@@ -537,7 +552,7 @@ fi
 
 for cmd in unzip python3 rsync git ssh scp killall sudo grep pgrep ${linux_cmds}; do
     if ! command -v "${cmd}" > /dev/null; then
-        echo "[-] Command '${cmd}' not installed, please install it!";
+        printr "[-] Command '${cmd}' not installed, please install it!";
         cmd_not_found=1
     fi
 done
@@ -557,7 +572,7 @@ check_and_install_package "pyliblzfse"
 
 # Check if futurerestore exists
 if [ ! -e "$dir"/futurerestore ]; then 
-    echo "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
+    printg "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
     if [ "$os" = "Darwin" ]; then
         curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
         unzip futurerestore-macOS-RELEASE.zip
@@ -591,8 +606,8 @@ chmod +x "$dir"/*
 # Start
 # ============
 
-echo "downr1n | Version 3.0"
-echo "Created by edwin, thanks palera1, and all people creator of path file boot"
+printb "downr1n | Version 3.0"
+printb "Created by edwin, thanks palera1, and all people creator of path file boot"
 echo ""
 
 parse_cmdline "$@"
@@ -603,32 +618,32 @@ fi
 
 if [ "$clean" = "1" ]; then
     rm -rf  work blobs/ boot/"$deviceid"/ 
-    echo "[*] Removed the created boot files"
+    printg "[*] Removed the created boot files"
     exit
 fi
 
 
 # Get device's iOS version from ideviceinfo if in normal mode
-echo "[*] Waiting for devices"
+printg "[*] Waiting for devices"
 while [ "$(get_device_mode)" = "none" ]; do
     sleep 1;
 done
-echo $(echo "[*] Detected $(get_device_mode) mode device" | sed 's/dfu/DFU/')
+echo $(printg "[*] Detected $(get_device_mode) mode device" | sed 's/dfu/DFU/')
 
 if grep -E 'pongo|checkra1n_stage2|diag' <<< "$(get_device_mode)"; then
-    echo "[-] Detected device in unsupported mode '$(get_device_mode)'"
+    printr "[-] Detected device in unsupported mode '$(get_device_mode)'"
     exit 1;
 fi
 
 if [ "$(get_device_mode)" != "normal" ] && [ -z "$version" ] && [ "$dfuhelper" != "1" ]; then
-    echo "[-] You must pass the version your device is on when not starting from normal mode"
+    printr "[-] You must pass the version your device is on when not starting from normal mode"
     exit
 fi
 
 if [ "$(get_device_mode)" = "ramdisk" ]; then
     # If a device is in ramdisk mode, perhaps iproxy is still running?
     _kill_if_running iproxy
-    echo "[*] Rebooting device in SSH Ramdisk"
+    printg "[*] Rebooting device in SSH Ramdisk"
     if [ "$os" = 'Linux' ]; then
         sudo "$dir"/iproxy 2222 22 >/dev/null &
     else
@@ -645,36 +660,36 @@ if [ "$(get_device_mode)" = "normal" ]; then
     version=${version:-$(_info normal ProductVersion)}
     arch=$(_info normal CPUArchitecture)
     if [ "$arch" = "arm64e" ]; then
-        echo "[-] downgrade doesn't, and never will, work on non-checkm8 devices"
+        printr "[-] downgrade doesn't, and never will, work on non-checkm8 devices"
         exit
     fi
     echo "Hello, $(_info normal ProductType) on $version!"
 
-    echo "[*] Switching device into recovery mode..."
-    if [ ! $("$dir"/ideviceenterrecovery $(_info normal UniqueDeviceID)) ]; then
-        echo "[/] if your device can't enter into recovery mode please try to force reboot and put it on recovery mode"
-    fi
+    printg "[*] Switching device into recovery mode..."
+    "$dir"/ideviceenterrecovery $(_info normal UniqueDeviceID)
+    printg "[/] if your device can't enter into recovery mode please try to force reboot and put it on recovery mode"
+    
     _wait recovery
 fi
 
 _detect
 
 # Grab more info
-echo "[*] Getting device info..."
+printg "[*] Getting device info..."
 cpid=$(_info recovery CPID)
 model=$(_info recovery MODEL)
 deviceid=$(_info recovery PRODUCT)
 
-echo "Detected cpid, your cpid is $cpid"
-echo "Detected model, your model is $model"
-echo "Detected deviceid, your deviceid is $deviceid"
+printg "Detected cpid, your cpid is $cpid"
+printg "Detected model, your model is $model"
+printg "Detected deviceid, your deviceid is $deviceid"
 
 if [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then
-    echo "[-] Please downr1n is not recommended on A8/A8X so instead try dualra1n with --downgrade option if you want a downgrade"
+    printr "[-] Please downr1n is not recommended on A8/A8X so instead try dualra1n with --downgrade option if you want a downgrade"
 fi
 
 if [ "$dfuhelper" = "1" ]; then
-    echo "[*] Running DFU helper"
+    printg "[*] Running DFU helper"
     _dfuhelper "$cpid"
     exit
 fi
@@ -686,7 +701,7 @@ ipswurl=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/
 if [ "$(get_device_mode)" != "dfu" ]; then
     recovery_fix_auto_boot;
     _dfuhelper "$cpid" || {
-        echo "[-] failed to enter DFU mode, run downr1n.sh again"
+        printr "[-] failed to enter DFU mode, run downr1n.sh again"
         exit -1
     }
 fi
@@ -699,29 +714,29 @@ fi
 
 # understand my code is more difficult that understand a programing language fr
 if [ ! $(ls ipsw/*.ipsw) ]; then
-    echo "YOU DON'T HAVE AN IPSW SO WE ARE GONNA DOWNLOAD IT, THE IPSW WILL BE for $deviceid AND the version $version, DO YOU WANT TO CHANGE THE VERSION (YES) OR (NO)"
+    printg "YOU DON'T HAVE AN IPSW SO WE ARE GONNA DOWNLOAD IT, THE IPSW WILL BE for $deviceid AND the version $version, DO YOU WANT TO CHANGE THE VERSION (YES) OR (NO)"
     while true; do
         read -r answer
         case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
             yes)
-                echo "[*] You answered YES. PLEASE WRITE THE VERSION THAT YOU WANT TO DUALBOOT WITH:"
+                printg "[*] You answered YES. PLEASE WRITE THE VERSION THAT YOU WANT TO DUALBOOT WITH:"
                 read -r version
                 ipswurl=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$version'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
                 break
                 ;;
             no)
-                echo "You answered NO. so using the $version."
+                printb "You answered NO. so using the $version."
                 break
                 ;;
             *)
-                echo "Invalid answer."
+                printr "Invalid answer."
                 usage
                 ;;
         esac
     done
 
     # downloader by @sasa
-    echo "[*] Downloading ipsw, it may take few minutes."
+    printg "[*] Downloading ipsw, it may take few minutes."
     curl -Lo ipsw/$deviceid-$version.ipsw "$ipswurl" "-#"
     ipsw=$(find ipsw/ -name "*.ipsw")
  fi
@@ -736,7 +751,7 @@ mkdir -p ipsw/extracted/$deviceid/$version
 extractedIpsw="ipsw/extracted/$deviceid/$version/"
 
 if [[ "$ipsw" == *".ipsw" ]]; then
-    echo "[*] Argument detected we are gonna use the ipsw specified"
+    printg "[*] Argument detected we are gonna use the ipsw specified"
 else
     ipsw=()
     for file in ipsw/*.ipsw; do
@@ -745,14 +760,14 @@ else
 
 
     if [ ${#ipsw[@]} -eq 0 ]; then
-        echo "No .ipsw files found."
+        printr "No .ipsw files found."
         exit;
     else
         for file in "${ipsw[@]}"; do
             if [[ "$file" = *"$version"* ]]; then
                 while true
                 do
-                    echo "[-] we found $file, do you want to use it ? please write, "yes" or "no""
+                    printr "[-] we found $file, do you want to use it ? please write, "yes" or "no""
                     read result
                     if [ "$result" = "yes" ]; then
                         echo "$file"
@@ -772,16 +787,16 @@ fi
 if [[ "$(declare -p ipsw)" =~ "declare -a" ]]; then
     while true
     do
-        echo "Choose an IPSW by entering its number:"
+        printb "Choose an IPSW by entering its number:"
         for i in "${!ipsw[@]}"; do
             echo "$((i+1)). ${ipsw[i]}"
         done
         read -p "Enter your choice: " choice
 
         if [[ ! "$choice" =~ ^[1-${#ipsw[@]}]$ ]]; then
-            echo "Invalid IPSW number. Please enter a valid number."
+            printr "Invalid IPSW number. Please enter a valid number."
         else
-            echo "[*] We are gonna use ${ipsw[$choice-1]}"
+            printg "[*] We are gonna use ${ipsw[$choice-1]}"
             ipsw="${ipsw[$choice-1]}"
             break
         fi
@@ -791,7 +806,7 @@ fi
 unzip -o $ipsw BuildManifest.plist -d work/ >/dev/null
 
 if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
-    echo "[*] Checking if the ipsw is for your device"
+    printg "[*] Checking if the ipsw is for your device"
     ipswDevicesid=()
     ipswVers=""
     ipswDevId=""
@@ -816,18 +831,18 @@ if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     
     
     if [ "$ipswDevId" = "" ]; then
-        echo "[/] it looks like this ipsw file is wrong, please check your ipsw"
+        printg "[/] it looks like this ipsw file is wrong, please check your ipsw"
         
         for element in "${ipswDevicesid[@]}"; do
             echo "this are the ipsw devices support: $element"
         done
         
-        echo "and your device $deviceid is not in the list"
+        printr "and your device $deviceid is not in the list"
         read -p "want to continue ? click enter ..."
     fi
 
 
-    echo "[*] Checking ipsw version"
+    printg "[*] Checking ipsw version"
     if [ "$os" = 'Darwin' ]; then
         ipswVers=$(/usr/bin/plutil -extract "ProductVersion" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)
     else
@@ -835,7 +850,7 @@ if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     fi
     
     if [[ ! "$version" = "$ipswVers" ]]; then
-        echo "ipsw version is $ipswVers, and you specify $version"
+        printr "ipsw version is $ipswVers, and you specify $version"
         read -p "wrong ipsw version detected, click ENTER to continue or just ctrl + c to exit"
     fi
 
@@ -854,10 +869,10 @@ fi
 
 if [ "$downgrade" = "1" ] || [ "$jailbreak" = "1" ]; then
     # extracting ipsw
-    echo "[*] Extracting ipsw, hang on please ..." # this will extract the ipsw into ipsw/extracted
+    printg "[*] Extracting ipsw, hang on please ..." # this will extract the ipsw into ipsw/extracted
     unzip -n $ipsw -d $extractedIpsw >/dev/null
     #cp -v "$extractedIpsw/BuildManifest.plist" work/
-    echo "[*] Got extract the IPSW successfully"
+    printg "[*] Got extract the IPSW successfully"
 fi
 
 if [ "$jailbreak" = "1" ]; then
@@ -876,10 +891,10 @@ if [ true ]; then
 
     cd ramdisk
     chmod +x sshrd.sh
-    echo "[*] Creating ramdisk"
+    printg "[*] Creating ramdisk"
     ./sshrd.sh "15.6"
 
-    echo "[*] Booting ramdisk"
+    printg "[*] Booting ramdisk"
     ./sshrd.sh boot
     cd ..
     # remove special lines from known_hosts
@@ -901,7 +916,7 @@ if [ true ]; then
     fi
 
     if ! ("$dir"/sshpass -p 'alpine' ssh -ostricthostkeychecking=false -ouserknownhostsfile=/dev/null -o StrictHostKeyChecking=no -q -p2222 root@localhost "echo connected" &> /dev/null); then
-        echo "[*] Waiting for the ramdisk to finish booting"
+        printg "[*] Waiting for the ramdisk to finish booting"
     fi
 
     while ! ("$dir"/sshpass -p 'alpine' ssh -ostricthostkeychecking=false -ouserknownhostsfile=/dev/null -o StrictHostKeyChecking=no -q -p2222 root@localhost "echo connected" &> /dev/null); do
@@ -914,49 +929,48 @@ if [ true ]; then
         HasBaseband='--no-baseband'
     fi
 
-    echo "[*] Mounting filesystems ..."
+    printg "[*] Mounting filesystems ..."
     if [[ "$version" = "13."* ]]; then
         remote_cmd "/sbin/mount_apfs /dev/disk0s1s1 /mnt1"
     fi
 
     if [ ! "$downgrade" = "1" ] && [[ ! "$version" = "13."* ]]; then
         remote_cmd "/usr/bin/mount_filesystems 2>/dev/null"
+        if [ ! "$(remote_cmd "ls /mnt6/active" 2> /dev/null)" = "/mnt6/active" ]; then
+            printr "[!] Active file does not exist! Please use SSH to create it, or it means that you are on ios 13 which this can't support it"
+            printr "    /mnt6/active should contain the name of the UUID in /mnt6"
+            printr "    When done, type reboot in the SSH session, then rerun the script"
+            printr "    ssh root@localhost -p 2222"
+            exit
+        fi
+        active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
+    
     elif [ "$downgrade" = "1" ] && [[ ! "$version" = "13."* ]]; then
         remote_cmd "/usr/bin/mount_filesystems_nouser 2>/dev/null"
     fi
-
-    has_active=$(remote_cmd "ls /mnt6/active" 2> /dev/null)
-    if [ ! "$has_active" = "/mnt6/active" ]; then
-        printr "[!] Active file does not exist! Please use SSH to create it"
-        printr "    /mnt6/active should contain the name of the UUID in /mnt6"
-        printr "    When done, type reboot in the SSH session, then rerun the script"
-        printr "    ssh root@localhost -p 2222"
-        exit
-    fi
-    active=$(remote_cmd "cat /mnt6/active" 2> /dev/null)
     
     mkdir -p "boot/${deviceid}"
 
     if [ ! -e blobs/"$deviceid"-"$version".shsh2 ]; then
         remote_cmd "cat /dev/rdisk1" | dd of=dump.raw bs=256 count=$((0x4000)) 
         "$dir"/img4tool --convert -s blobs/"$deviceid"-"$version".shsh2 dump.raw
-        echo "[*] Converting blob"
+        printg "[*] Converting blob"
         sleep 3
         rm dump.raw
 
     fi
 
     "$dir"/img4tool -e -s blobs/"$deviceid"-"$version".shsh2 -m work/IM4M >/dev/null
-    echo "[*] Dumpped SHSH"
+    printg "[*] Dumpped SHSH"
 
-    echo "[*] Checking device version"
+    printg "[*] Checking device version"
     remote_cp other/plutil root@localhost:/mnt1/
 
     SystemVersion=$(remote_cmd "chmod +x /mnt1/plutil && /mnt1/plutil -key ProductVersion /mnt1/System/Library/CoreServices/SystemVersion.plist")
-    echo "the version that the device is currently in is $SystemVersion"
+    printg "the version that the device is currently in is $SystemVersion"
 
     if [ "$jailbreak" = "1" ]; then
-        echo "[*] Patching kernel" # this will send and patch the kernel
+        printg "[*] Patching kernel" # this will send and patch the kernel
         cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
         cp  work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" work/kernelcache 
         
@@ -982,7 +996,7 @@ if [ true ]; then
         remote_cmd "/bin/chmod 755 /mnt1/private/var/root/Kernel15Patcher.ios"
         sleep 1
         if [ ! $(remote_cmd "/mnt1/private/var/root/Kernel15Patcher.ios ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.patched ${sysDir}System/Library/Caches/com.apple.kernelcaches/kcache.patchedB  2>/dev/null") ]; then
-            echo "you have the kernelpath already installed "
+            printg "you have the kernelpath already installed "
         fi
 
         sleep 2
@@ -1001,46 +1015,46 @@ if [ true ]; then
         #"$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" -o work/kernelcache.img4 -M work/IM4M -T rkrn -P work/kc.bpatch `if [ "$os" = 'Linux' ]; then echo "-J"; fi`
         #remote_cp root@localhost:/mnt6/$active/System/Library/Caches/com.apple.kernelcaches/kernelcachd work/kernelcache.img4
         cp -v "work/kernelcache.img4" "boot/${deviceid}"
-        echo "[*] Finished of patching the kernel"
+        printg "[*] Finished of patching the kernel"
         
         remote_cmd "/bin/mkdir -p /mnt1/Applications/dualra1n-loader.app && /bin/mkdir -p /mnt1/Applications/trollstore.app"
 
-        echo "[*] installing dualra1n-loader"
+        printg "[*] installing dualra1n-loader"
         unzip -o other/dualra1n-loader.ipa -d other/
         remote_cp other/Payload/dualra1n-loader.app root@localhost:/mnt1/Applications/
         
-        echo "[*] Saving snapshot"
+        printg "[*] Saving snapshot"
         if [ ! "$(remote_cmd "/usr/bin/snaputil -c orig-fs /mnt1")" ]; then
-            echo "[-] the snapshot are already created, SKIPPING ..."
+            printr "[-] the snapshot are already created, SKIPPING ..."
         fi
 
         if [ ! $(remote_cmd "trollstoreinstaller TV") ]; then
-            echo "[/] error installing trollstore on TV app"
+            printg "[/] error installing trollstore on TV app"
         fi
 
-        echo "[*] Fixing dualra1n-loader"
+        printg "[*] Fixing dualra1n-loader"
         if [ ! $(remote_cmd "chmod +x /mnt1/Applications/dualra1n-loader.app/dualra1n* && /usr/sbin/chown 33 /mnt1/Applications/dualra1n-loader.app/dualra1n-loader && /bin/chmod 755 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper && /usr/sbin/chown 0 /mnt1/Applications/dualra1n-loader.app/dualra1n-helper" ) ]; then
-            echo "install dualra1n-loader using trollstore or another methods"
+            printb "install dualra1n-loader using trollstore or another methods"
         fi
 
         if [[ "$version" = "13."* ]]; then
-            echo "[*] DONE ... now reboot and boot again"   
+            printg "[*] DONE ... now reboot and boot again"   
             remote_cmd "/sbin/reboot"
             exit;
         fi
 
         if [ "$taurine" = 1 ]; then
-            echo "installing taurine"
+            printb "installing taurine"
             remote_cp other/taurine/* root@localhost:/mnt1/
-            echo "[*] Taurine sucessfully copied"
+            printg "[*] Taurine sucessfully copied"
             _do_localboot
-            echo "[*] Finished, now your downgrade is jailbroken, you can boot it"
+            printg "[*] Finished, now your downgrade is jailbroken, you can boot it"
             remote_cmd "/sbin/reboot"
             exit;
         fi
 
-        echo "installing JBINIT jailbreak, thanks palera1n"
-        echo "[*] Copying files to rootfs"
+        printb "installing JBINIT jailbreak, thanks palera1n"
+        printg "[*] Copying files to rootfs"
         remote_cmd "rm -rf /mnt1/jbin /mnt1/.installed_palera1n"
         sleep 1
         remote_cmd "mkdir -p /mnt1/jbin/binpack /mnt1/jbin/loader.app"
@@ -1055,15 +1069,15 @@ if [ true ]; then
         sleep 1
         remote_cmd "rm /mnt1/jbin/binpack/binpack.tar"
         remote_cmd "/usr/sbin/nvram auto-boot=true"
-        echo "[*] Finished of jailbreaking"
+        printg "[*] Finished of jailbreaking"
         _do_localboot        
-        echo "[*] DONE ... now reboot and boot again"   
+        printg "[*] DONE ... now reboot and boot again"   
         remote_cmd "/sbin/reboot"
         exit;
 
     fi
     
-    echo "[*] extracting kernel ..." # this will send and patch the kernel
+    printg "[*] extracting kernel ..." # this will send and patch the kernel
     
     cp "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/kernelcache"
     
@@ -1075,15 +1089,15 @@ if [ true ]; then
 
     "$dir"/img4 -i work/kernelcache -o work/kcache.raw >/dev/null
 
-    echo "[*] extracted"
+    printg "[*] extracted"
 
-    echo "Reboot into recovery mode ..."
+    printb "Reboot into recovery mode ..."
     remote_cmd "/usr/sbin/nvram auto-boot=false"
     remote_cmd "/sbin/reboot"
     sleep 10
 
     if [ "$(get_device_mode)" = "dfu" ]; then
-        echo "device in false dfu mode. please force reboot and try to put it on dfu mode by precing the button."
+        printb "device in false dfu mode. please force reboot and try to put it on dfu mode by precing the button."
         read -p "click enter if you got dfu mode on the iphone"
         "$dir"/gaster pwn
     else
@@ -1095,7 +1109,7 @@ if [ true ]; then
 
         
 
-    echo "[* ]Patching some boot files..."
+    printb "[* ]Patching some boot files..."
     if [ "$downgrade" = "1" ]; then
         sleep 1
 
@@ -1138,10 +1152,10 @@ if [ true ]; then
             "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:OS:Info:Path" | sed 's/"//g')".trustcache -o work/trustcache.img4 -M work/IM4M -T rtsc >/dev/null
         fi
 
-        echo "[*] Finished moving the boot files to work"
+        printg "[*] Finished moving the boot files to work"
         sleep 2
         
-        echo "[*] Decrypthing ibss and iboot"
+        printg "[*] Decrypthing ibss and iboot"
         "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBSS[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBSS.dec
         
         sleep 1
@@ -1155,17 +1169,17 @@ if [ true ]; then
         "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
 
         if [ "$keyServer" = "1" ]; then
-            echo "[*] patching ibss and ibec for futurerestore downgrade"
+            printg "[*] patching ibss and ibec for futurerestore downgrade"
             mkdir -p $TMPDIR/futurerestore
             cp  "$extractedIpsw$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "work/"
             "$dir"/gaster decrypt work/"$(awk "/""${model}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" work/iBECFuture.dec >/dev/null
             "$dir"/iBoot64Patcher work/iBECFuture.dec work/iBECFuture.patched -b "rd=md0 nand-enable-reformat=0x1 -v -restore debug=0x2014e keepsyms=0x1 amfi=0xff amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1" -n >/dev/null
             "$dir"/img4 -i work/iBECFuture.patched -o "$TMPDIR/futurerestore/ibec.$model.$version_code.patched.img4" -M work/IM4M -A -T ibec >/dev/null
             cp -av work/iBSS.img4 $TMPDIR/futurerestore/ibss.$model.$version_code.patched.img4
-            echo "sucessfully create files for futurerestore"
+            printb "sucessfully create files for futurerestore"
         fi
 
-        echo "[*] Patching the kernel"
+        printg "[*] Patching the kernel"
         "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched $(if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi) $(if [[ "$version" = "14."* ]]; then echo "-b"; fi) $(if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi) >/dev/null
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
@@ -1176,7 +1190,7 @@ if [ true ]; then
 
         python3 -m pyimg4 img4 create -p work/kcache.im4p -o work/kernelcache.img4 -m work/IM4M >/dev/null
 
-        echo "[*] Patching the kernel to restore using futurerestore"
+        printg "[*] Patching the kernel to restore using futurerestore"
         "$dir"/Kernel64Patcher work/kcache.raw work/krnl.patched -a -b >/dev/null
     
         if [[ "$deviceid" == "iPhone8"* ]] || [[ "$deviceid" == "iPad6"* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
@@ -1185,7 +1199,7 @@ if [ true ]; then
             python3 -m pyimg4 im4p create -i work/krnl.patched -o work/krnl.im4p -f rkrn --lzss >/dev/null
         fi
     
-        echo "[*] Patching devicetree"
+        printg "[*] Patching devicetree"
         "$dir"/img4 -i work/"$(awk "/""${model}""/{x=1}x&&/DeviceTree[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" work/devicetree.img4 -M work/IM4M -T rdtr >/dev/null
         
         if [ "$os" = "Darwin" ]; then
@@ -1200,7 +1214,7 @@ if [ true ]; then
             "$dir"/img4 -i work/"$(binaries/Linux/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/"//g')" -o work/ramdisk.dmg >/dev/null
         fi
         
-        echo "[*] Patching the restored_external and asr, and saving them into the ramdisk ..."
+        printg "[*] Patching the restored_external and asr, and saving them into the ramdisk ..."
         if [ "$os" = "Darwin" ]; then
             hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD >/dev/null
             mounted="/tmp/SSHRD"
@@ -1255,23 +1269,23 @@ if [ true ]; then
     
         cp -v work/*.img4 "boot/${deviceid}" # copying all file img4 to boot
 
-        echo "[*] Sucess Patching the boot files"
+        printg "[*] Sucess Patching the boot files"
         
-        echo "[*] Checking if the llb was already replaced"
+        printg "[*] Checking if the llb was already replaced"
 
         if [ ! -e "boot/${deviceid}/.llbreplaced" ]; then
-            echo "[*] Patching the llb in the ipsw to avoid false dfu mode"
-            echo "[=] Hi, please i need that you write the ios version that this device is on or the version of the ios that it was on (if this device is already downgraded), most of the time is the lastest version of ios. write 0 if you want to skip this (it is not recommended to skip this as this can avoid false dfu mode)"
+            printg "[*] Patching the llb in the ipsw to avoid false dfu mode"
+            printg "[=] Hi, please i need that you write the ios version that this device is on or the version of the ios that it was on (if this device is already downgraded), most of the time is the lastest version of ios. write 0 if you want to skip this (it is not recommended to skip this as this can avoid false dfu mode)"
         
             while true
             do
                 if [ ! "$version" = "$SystemVersion" ] && [ ! "$SystemVersion" = "" ]; then
-                    echo "Version detected!. we are gonna use $SystemVersion"
+                    printb "Version detected!. we are gonna use $SystemVersion"
                     ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$SystemVersion'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
                 else
                     read result
                     if [ "$result" = "0" ]; then
-                        echo "SKIPPING ..."
+                        printg "SKIPPING ..."
                         break
                     fi
                     ipswLLB=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$dir"/jq '.firmwares | .[] | select(.version=="'$result'")' | "$dir"/jq -s '.[0] | .url' --raw-output)
@@ -1281,20 +1295,20 @@ if [ true ]; then
 
                 cd work/
                 if [ $("$dir"/pzb -g "$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswLLB" >/dev/null) ]; then
-                    echo "failed to download LLB"
+                    printr "failed to download LLB"
                 fi
                 cd ..
 
                 if [ ! -e "work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" ]; then
-                    echo "[-] ERROR downloading the llb please check the ios version and write it again. if this error happens a lot of time please use 0 to skip llb"
+                    printr "[-] ERROR downloading the llb please check the ios version and write it again. if this error happens a lot of time please use 0 to skip llb"
                 else
-                    echo "[*] LLB downloaded correctly"
-                    echo "[*] putting this LLB into the ipsw"
+                    printg "[*] LLB downloaded correctly"
+                    printg "[*] putting this LLB into the ipsw"
                     cp -f work/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//') "$extractedIpsw/Firmware/all_flash/$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')"
                     cd $extractedIpsw
                     zip --update "$mainDir/$ipsw" Firmware/all_flash/"$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')" Firmware/all_flash//$(awk "/""${model}""/{x=1}x&&/LLB[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]all_flash[/]//')
                     cd "$mainDir"
-                    echo "[*] Replaced LLB suscessfully"
+                    printg "[*] Replaced LLB suscessfully"
 
                     touch "boot/${deviceid}/.llbreplaced"
                     break
@@ -1310,18 +1324,18 @@ if [ true ]; then
         "$dir"/irecovery -f "blobs/"$deviceid"-"$version".shsh2" >/dev/null
 
         if [ "$dontRestore" = "1" ]; then
-            echo "[*] Finished creating boot files now you can --boot in order to get boot to the system"
+            printg "[*] Finished creating boot files now you can --boot in order to get boot to the system"
             exit;
         fi
         
-        echo "[*] Executing futurerestore ..."
+        printg "[*] Executing futurerestore ..."
         _runFuturerestore
         sleep 2
 
-        echo "if futurerestore failed you can try execute the command below"
-        echo -e "\033[1;33mif futurerestore didn't finish succesfully please try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
+        printb "if futurerestore failed you can try execute the command below"
+        printb -e "\033[1;33mif futurerestore didn't finish succesfully please try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
 
-        echo "if futurerestore restore sucess, you can boot using  --boot"
+        printb "if futurerestore restore sucess, you can boot using  --boot"
     fi
 fi
 
