@@ -1332,8 +1332,8 @@ if [ true ]; then
         _runFuturerestore
         sleep 2
 
-        printb "if futurerestore failed you can try execute the command below"
-        printb -e "\033[1;33mif futurerestore didn't finish succesfully please try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
+        printg "if futurerestore failed you can try execute the command below"
+        echo -e "\033[1;33mif futurerestore didn't finish succesfully please try to run (with sudo or without) this command:\033[0m \033[1m$dir/futurerestore -t blobs/$deviceid-$version.shsh2 --use-pwndfu --skip-blob --rdsk work/rdsk.im4p --rkrn work/krnl.im4p --latest-sep $HasBaseband $ipsw\033[0m"
 
         printb "if futurerestore restore sucess, you can boot using  --boot"
     fi
