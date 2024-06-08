@@ -589,8 +589,11 @@ fi
 
 
 # Update submodules
-git submodule update --init --recursive 
-git submodule foreach git pull origin main
+# Update submodules
+if [ -d ".git/" ]; then
+    git submodule update --init --recursive 
+    git submodule foreach git pull origin main
+fi
 
 # Re-create work dir if it exists, else, make it
 if [ -e work ]; then
