@@ -30,10 +30,10 @@ The various command-line options are as follows:
 
 # Dependencies
 - please execute this command: python3 -m pip install pyimg4[compression] fastapi aiohttp ujson wikitextparser uvicorn.
+- unzip, python3, libimobiledevice-utils, libusbmuxd-tools, xz-utils, wget, curl, git, libssl-dev, usbmuxd.
 - A disabled passcode on A10 and A11 devices.
-- unzip, python3, libimobiledevice-utils, libusbmuxd-tools, xz-utils.
 - An .iPSW file containing iOS 15, 14, 13.
-- A device running macOS or a Linux distro. It is recommended to use macOS, as it is likely more stable and faster.
+- A device running macOS or a Linux distro. It is recommended to use macOS, as it is likely more stable and faster. and for linux it is recommended to use ubuntu or debian.
 
 # Issues Putting Device in PwnDFU Mode
 
@@ -41,7 +41,9 @@ The various command-line options are as follows:
 
 # importants things
 
-- A8/A8x devices downr1n is not recommended please instead use dualra1n with --downgrade option
+- A8/A8x devices downr1n is not recommended please instead use dualra1n with --downgrade option (if you don't have enough storage for a dualboot)
+
+- you can't downgrade an iphone x if the device is on ios 16
 
 - downgrading ios 16 to 14 or another version, you will have to bypass the setup somehow. good luck on it.
 

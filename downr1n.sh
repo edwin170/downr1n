@@ -15,6 +15,10 @@ printr()
   echo -e "\033[1;31m$1\033[0m"
 }
 
+printy() {
+  echo -e "\033[1;33m$1\033[0m"
+}
+
 if [ "$(uname)" == "Linux" ]; then
     if [ "$EUID" -ne 0 ]; then
     	printg "You have to run this as root on Linux."
@@ -96,6 +100,8 @@ Options:
     --downgrade         downgrade tethered your device.
     --jailbreak         jailbreak with dualra1n-loader. usage ./downr1n.sh --jailbreak 14.8 
     --taurine           jailbreak with taurine. usage ./downr1n.sh --jailbreak 14.3 --taurine
+    --aslrdisable       This option will path kernel to disable aslr on all process. use this when you creating boot files.
+    --ptracedisable     This option will path kernel to disable ptrace debugger method detection. use this when you creating boot files.
     --boot              this boot the device.
     --keyServer         use this option to downgrade when the keys server is in problem. use ex: --downgrade 14.8 --keyServer
     --dont-restore      this will avoid the restore using futurerestore, this can be used if you wanted only create the boot files, use ex: --downgrade 14.8 --dont-restore
@@ -122,6 +128,12 @@ parse_opt() {
             ;;
         --taurine)
             taurine=1
+            ;;
+        --aslrdisable)
+            aslrDisabled=1
+            ;;
+        --ptracedisable)
+            ptraceDisabled=1
             ;;
         --keyServer)
             keyServer=1
@@ -336,12 +348,22 @@ _do_localboot() {
                 python3 -m pyimg4 img4 create -p work/krnl.im4p -o work/kernelcachd -m work/IM4M >/dev/null
                 remote_cp work/kernelcachd root@localhost:/mnt6/"$active"/System/Library/Caches/com.apple.kernelcaches/ >/dev/null
                 
-                 if [ "$os" = 'Linux' ]; then
-                    sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
-                 else
-                    LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
-                 fi
+                #printb "[*] Renaming the snapshot"
+                #output=$(remote_cmd "snaputil -l /mnt1")
         
+                #SNAPSHOT=$(echo "$output" | awk '/com.apple.os.update-/ {print $1}')
+                #if [ $SNAPSHOT ]; then
+                #    remote_cmd "snaputil -n "$SNAPSHOT" backup."$SNAPSHOT" /mnt1"
+                #fi
+
+                if [ "$os" = 'Linux' ]; then
+                    #sed -i 's/com\.apple\.os\.update-/downr1n\.rfsnapshot-/g' work/iBEC.dec
+                    sed -i 's/\/\kernelcache/\/\kernelcachd/g' work/iBEC.dec
+                else
+                    #LC_ALL=C sed -i.bak -e 's/com\.apple\.os\.update-/downr1n\.rfsnapshot-/g' work/iBEC.dec
+                    LC_ALL=C sed -i.bak -e 's/s\/\kernelcache/s\/\kernelcachd/g' work/iBEC.dec
+                fi
+
                 "$dir"/iBoot64Patcher work/iBEC.dec work/iBEC.patched -b "-v wdt=-1 debug=0x2014e `if [ "$cpid" = '0x8960' ] || [ "$cpid" = '0x7000' ] || [ "$cpid" = '0x7001' ]; then echo "-restore"; fi`" -n -l >/dev/null
                 "$dir"/img4 -i work/iBEC.patched -o work/iBEC.img4 -M work/IM4M -A -T "$(if [[ "$cpid" == *"0x801"* ]]; then echo "ibss"; else echo "ibec"; fi)" >/dev/null
                 cp -v work/iBEC.img4 "boot/${deviceid}"
@@ -366,8 +388,8 @@ usage() {
 ask() {
     printg "Do you want to activate the iBoot localboot path? YES or NO."
     printg "Activating this path can help avoid a lot of problems and is generally more stable."
-    printg "If you activate it, you will need to use --boot again after it finishes to boot with localboot."
-    printg "If localboot breaks your boot process (like you can't boot), please execute ./downr1n.sh --downgrade (version) --dont-restore to fix the boot files."
+    #printg "If you activate it, you will need to use --boot again after it finishes to boot with localboot."
+    printy "If localboot breaks your boot process (like you can't boot), please execute ./downr1n.sh --downgrade (version) --dont-restore to fix the boot files."
 }
 
 _kill_if_running() {
@@ -604,6 +626,11 @@ else
 fi
 
 chmod +x "$dir"/*
+if [ "$os" = 'Darwin' ]; then
+    find "$dir" -type f -exec file {} \; | grep "Mach-O" | cut -d: -f1 | while read -r binaries_file; do
+        xattr -d com.apple.quarantine "$binaries_file"
+    done
+fi
 
 # ============
 # Start
@@ -986,7 +1013,7 @@ if [ true ]; then
         "$dir"/img4 -i work/kernelcache -o work/kcache.raw >/dev/null
 
 
-        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched $(if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi) $(if [[ "$version" = "14."* ]]; then echo "-b"; fi) $(if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi) $(if [ ! "$taurine" = "1" ]; then echo "-l"; fi) >/dev/null
+        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched `if [ "$ptraceDisabled" = "1" ]; then echo "-t"; fi` `if [ "$aslrDisabled" = "1" ]; then echo "-c"; fi` `if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi` `if [[ "$version" = "14."* ]]; then echo "-b"; fi` `if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi` `if [ ! "$taurine" = "1" ]; then echo "-l"; fi` >/dev/null
 
         sysDir="/mnt6/$active/"
         if [[ "$version" = "13."* ]]; then
@@ -1183,7 +1210,7 @@ if [ true ]; then
         fi
 
         printg "[*] Patching the kernel"
-        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched $(if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi) $(if [[ "$version" = "14."* ]]; then echo "-b"; fi) $(if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi) >/dev/null
+        "$dir"/Kernel64Patcher work/kcache.raw work/kcache.patched `if [ "$ptraceDisabled" = "1" ]; then echo "-t"; fi` `if [ "$aslrDisabled" = "1" ]; then echo "-c"; fi` `if [[ "$version" = "15."* ]]; then echo "-e -o -r -b15"; fi` `if [[ "$version" = "14."* ]]; then echo "-b"; fi` `if [[ "$version" = "13."* ]]; then echo "-b13 -n"; fi` >/dev/null
         
         if [[ "$deviceid" == *'iPhone8'* ]] || [[ "$deviceid" == *'iPad6'* ]] || [[ "$deviceid" == *'iPad5'* ]]; then
             python3 -m pyimg4 im4p create -i work/kcache.patched -o work/kcache.im4p -f rkrn --extra work/kpp.bin --lzss >/dev/null
