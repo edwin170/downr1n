@@ -627,8 +627,8 @@ fi
 
 chmod +x "$dir"/*
 if [ "$os" = 'Darwin' ]; then
-    find "$dir" -type f -exec file {} \; | grep "Mach-O" | cut -d: -f1 | while read -r binaries_file; do
-        xattr -d com.apple.quarantine "$binaries_file"
+    for file in "$dir"/*; do
+        xattr -d com.apple.quarantine "$file" 2>/dev/null || true
     done
 fi
 
@@ -637,7 +637,7 @@ fi
 # ============
 
 printb "downr1n | Version 3.0"
-printb "Created by edwin, thanks palera1, and all people creator of path file boot"
+printb "Created by edwin, thanks palera1n, and all people creator of path file boot"
 echo ""
 
 parse_cmdline "$@"
