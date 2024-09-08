@@ -596,13 +596,15 @@ check_and_install_package "pyliblzfse"
 if [ ! -e "$dir"/futurerestore ]; then 
     printg "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
     if [ "$os" = "Darwin" ]; then
-        curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
-        unzip futurerestore-macOS-RELEASE.zip
-        tar Jxfv futurerestore-*.xz
+    # Expired link / artifact (Mac OS)
+    #    curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
+    #    unzip futurerestore-macOS-RELEASE.zip
+    #    tar Jxfv futurerestore-*.xz
     else
-        curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
-        unzip futurerestore-Linux-x86_64-RELEASE.zip
-        tar Jxfv futurerestore-*.xz
+    # Expired link / artifact (Linux)
+    #    curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
+    #    unzip futurerestore-Linux-x86_64-RELEASE.zip
+    #    tar Jxfv futurerestore-*.xz
     fi
     mv futurerestore "$dir"/
     rm -rf futurerestore-*
