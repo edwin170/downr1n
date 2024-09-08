@@ -596,11 +596,28 @@ check_and_install_package "pyliblzfse"
 if [ ! -e "$dir"/futurerestore ]; then 
     printg "[*] Downloading futurerestore please wait..." # futurerestore downloader by sasa :)
     if [ "$os" = "Darwin" ]; then
+        # Retrieving the latest build : https://github.com/futurerestore/futurerestore/actions
+        # Last update : 2024-09-08 (https://nightly.link/futurerestore/futurerestore/actions/runs/10756811250)
+
+        # Temporary solution: please specify a version compatible with downra1n fuurerestore commands.
+        curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/actions/runs/10756811250/futurerestore-macOS-RELEASE.zip
+        unzip futurerestore-macOS-RELEASE.zip
+        tar Jxfv futurerestore-*.xz
+    
     # Expired link / artifact (Mac OS)
     #    curl -sLo futurerestore-macOS-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-macOS-RELEASE.zip
     #    unzip futurerestore-macOS-RELEASE.zip
     #    tar Jxfv futurerestore-*.xz
+
     else
+        # Retrieving the latest build : https://github.com/futurerestore/futurerestore/actions
+        # Last update : 2024-09-08 (https://nightly.link/futurerestore/futurerestore/actions/runs/10756811250)
+
+        # Temporary solution: please specify a version compatible with downra1n fuurerestore commands.
+        curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/actions/runs/10756811250/futurerestore-Linux-x86_64-RELEASE.zip
+        unzip futurerestore-Linux-x86_64-RELEASE.zip
+        tar Jxfv futurerestore-*.xz
+    
     # Expired link / artifact (Linux)
     #    curl -sLo futurerestore-Linux-x86_64-RELEASE.zip https://nightly.link/futurerestore/futurerestore/workflows/ci/main/futurerestore-Linux-x86_64-RELEASE.zip
     #    unzip futurerestore-Linux-x86_64-RELEASE.zip
