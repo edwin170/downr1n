@@ -1,5 +1,5 @@
 # downr1n
-Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 15, 14 and 13.
+Downr1n enables tethered downgrades of checkm8 iOS devices to iOS 15, 14 and 13.4 upper.
 
 there is dualra1n too, which is a dualboot for ios like having two different ios [dualra1n](https://github.com/dualra1n/dualra1n), i would recommend more dualra1n as it is very stable.
 
@@ -29,10 +29,9 @@ The various command-line options are as follows:
 ---
 
 # Dependencies
-- please execute this command: python3 -m pip install pyimg4[compression] fastapi aiohttp ujson wikitextparser uvicorn.
 - unzip, python3, libimobiledevice-utils, libusbmuxd-tools, xz-utils, wget, curl, git, libssl-dev, usbmuxd.
 - A disabled passcode on A10 and A11 devices.
-- An .iPSW file containing iOS 15, 14, 13.
+- An .iPSW file containing iOS 15, 14, 13.4 upper.
 - A device running macOS or a Linux distro. It is recommended to use macOS, as it is likely more stable and faster. and for linux it is recommended to use ubuntu or debian.
 
 # Issues Putting Device in PwnDFU Mode
@@ -45,9 +44,9 @@ The various command-line options are as follows:
 
 - you can't downgrade an iphone x if the device is on ios 16
 
-- downgrading ios 16 to 14 or another version, you will have to bypass the setup somehow. good luck on it.
+- downgrading ios 16 to 14 or another version, you should have backup your activations file in order to after downgrade and boot sucessfully restore them, you can use https://github.com/edwin170/bypassr1n.
 
-- on ios 13 the touch id doesn't work so the home button on iphone 7 will not work sadly.
+- on ios 13 the touch id doesn't work so the home button will not work sadly.
 
 - you can't downgrade to ios 14.2 lower on a11 devices
 
@@ -59,7 +58,7 @@ The various command-line options are as follows:
 
 # fix some problems
 
-- please execute wikiproxy.py manually if it gives problem with server key. for ex: sudo python3 wikiproxy.py
+- if it gives problem with server key please execute: 1: python3 -m pip install git+https://github.com/m1stadev/wikiproxy.git 2: wikiproxy & 
 
 - if the error still after above fix, if this happend to you when you are downgrading with futurerestore again please add this arg --keyServer for example ./downr1n.sh --downgrade 14.5 --keyServer.
 
