@@ -1,7 +1,5 @@
 .DS_Store
 */.DS_Store
-binaries/Linux/futurerestore
-binaries/Darwin/futurerestore
 work
 ramdisk
 boot*
