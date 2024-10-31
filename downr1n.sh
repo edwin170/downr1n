@@ -533,7 +533,7 @@ check_and_install_package() {
     elif [ "$installed_version" != "$required_version" ]; then
         printr "[-] $package version $required_version is not installed (current version: $installed_version). We can install it for you. Press any key to start installing $package $required_version, or press Ctrl + C to cancel."
         read -n 1 -s
-        python3 -m pip install "$package==$required_version" --break-system-packages
+        python3 -m pip install "$package==$required_version" #--break-system-packages
     else
         echo "[+] $package version $required_version is already installed."
     fi
