@@ -29,7 +29,7 @@ The various command-line options are as follows:
 ---
 
 # Dependencies
-- unzip, python3, libimobiledevice-utils, libusbmuxd-tools, xz-utils, wget, curl, git, libssl-dev, usbmuxd.
+- unzip python3 libimobiledevice libusbmuxd xz wget curl git openssl usbmuxd zip 
 - A disabled passcode on A10 and A11 devices.
 - An .iPSW file containing iOS 15, 14, 13.4 upper.
 - A device running macOS or a Linux distro. It is recommended to use macOS, as it is likely more stable and faster. and for linux it is recommended to use ubuntu or debian.
