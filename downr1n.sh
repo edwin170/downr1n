@@ -526,14 +526,23 @@ check_and_install_package() {
     local package=$1
     local required_version=$2
     local installed_version=$(python3 -c "import pkg_resources; print(pkg_resources.get_distribution('$package').version)" 2>/dev/null || echo "not installed")
+    major_version=$(pip --version | cut -d' ' -f2 | cut -d'.' -f1)
 
     if [ -z "$required_version" ]; then
         printr "[-] No version specified for $package. Installing the latest version."
-        python3 -m pip install "$package" #--break-system-packages
+        if [ "$major_version" -gt 30 ]; then
+            python3 -m pip install "$package" --break-system-packages
+        else
+            python3 -m pip install "$package"
+        fi
     elif [ "$installed_version" != "$required_version" ]; then
         printr "[-] $package version $required_version is not installed (current version: $installed_version). We can install it for you. Press any key to start installing $package $required_version, or press Ctrl + C to cancel."
         read -n 1 -s
-        python3 -m pip install "$package==$required_version" #--break-system-packages
+        if [ "$major_version" -gt 30 ]; then
+            python3 -m pip install "$package==$required_version" --break-system-packages
+        else
+            python3 -m pip install "$package==$required_version"
+        fi
     else
         echo "[+] $package version $required_version is already installed."
     fi
