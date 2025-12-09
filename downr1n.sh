@@ -223,58 +223,82 @@ _reset() {
 
 get_device_mode() {
     if [ "$os" = "Darwin" ]; then
-        sp="$(system_profiler SPUSBDataType 2> /dev/null)"
-        apples="$(printf '%s' "$sp" | grep -B1 'Vendor ID: 0x05ac' | grep 'Product ID:' | cut -dx -f2 | cut -d' ' -f1 | tail -r)"
+        darwin_major=$(uname -r | cut -d. -f1)
+
+        if [ "$darwin_major" = "26" ]; then
+            sp="$(system_profiler SPUSBHostDataType 2>/dev/null)"
+            apples="$(printf '%s' "$sp" \
+                | grep -C1 'Vendor ID: 0x05ac' \
+                | grep 'Product ID:' \
+                | cut -dx -f2 \
+                | cut -d' ' -f1 \
+                | tail -r)"
+        else
+            sp="$(system_profiler SPUSBDataType 2>/dev/null)"
+            apples="$(printf '%s' "$sp" \
+                | grep -B1 'Vendor ID: 0x05ac' \
+                | grep 'Product ID:' \
+                | cut -dx -f2 \
+                | cut -d' ' -f1 \
+                | tail -r)"
+        fi
+
     elif [ "$os" = "Linux" ]; then
         apples="$(lsusb | cut -d' ' -f6 | grep '05ac:' | cut -d: -f2)"
     fi
+
     local device_count=0
     local usbserials=""
     for apple in $apples; do
         case "$apple" in
             12a8|12aa|12ab)
-            device_mode=normal
-            device_count=$((device_count+1))
-            ;;
+                device_mode=normal
+                device_count=$((device_count+1))
+                ;;
             1281)
-            device_mode=recovery
-            device_count=$((device_count+1))
-            ;;
+                device_mode=recovery
+                device_count=$((device_count+1))
+                ;;
             1227)
-            device_mode=dfu
-            device_count=$((device_count+1))
-            ;;
+                device_mode=dfu
+                device_count=$((device_count+1))
+                ;;
             1222)
-            device_mode=diag
-            device_count=$((device_count+1))
-            ;;
+                device_mode=diag
+                device_count=$((device_count+1))
+                ;;
             1338)
-            device_mode=checkra1n_stage2
-            device_count=$((device_count+1))
-            ;;
+                device_mode=checkra1n_stage2
+                device_count=$((device_count+1))
+                ;;
             4141)
-            device_mode=pongo
-            device_count=$((device_count+1))
-            ;;
+                device_mode=pongo
+                device_count=$((device_count+1))
+                ;;
         esac
     done
+
     if [ "$device_count" = "0" ]; then
         device_mode=none
     elif [ "$device_count" -ge "2" ]; then
         printr "[-] Please attach only one device" > /dev/tty
         kill -30 0
-        exit 1;
+        exit 1
     fi
+
     if [ "$os" = "Linux" ]; then
         usbserials=$(cat /sys/bus/usb/devices/*/serial)
     elif [ "$os" = "Darwin" ]; then
         usbserials=$(printf '%s' "$sp" | grep 'Serial Number' | cut -d: -f2- | sed 's/ //')
     fi
+
     if grep -qE '(ramdisk tool|SSHRD_Script) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{1,2} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}' <<< "$usbserials"; then
         device_mode=ramdisk
     fi
+
     echo "$device_mode"
 }
+
 
 _wait() {
     if [ "$(get_device_mode)" != "$1" ]; then
@@ -1236,7 +1260,16 @@ if [ true ]; then
         
         printg "[*] Patching the restored_external and asr, and saving them into the ramdisk ..."
         if [ "$os" = "Darwin" ]; then
-            hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD >/dev/null
+            darwin_major=$(uname -r | cut -d. -f1)
+
+            is_tahoe=false
+            if [ "$darwin_major" = "26" ]; then
+                echo "please add your root passwword to mount the ramdisk"
+                sudo hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD >/dev/null
+            else
+                hdiutil attach work/ramdisk.dmg -mountpoint /tmp/SSHRD >/dev/null
+            fi
+            
             mounted="/tmp/SSHRD"
     
             "$dir"/asr64_patcher $mounted/usr/sbin/asr work/patched_asr >/dev/null
@@ -1258,8 +1291,11 @@ if [ true ]; then
                 mv work/patched_restored_external $mounted/usr/local/bin/restored_external
             fi
             
-    
-            hdiutil detach -force /tmp/SSHRD
+            if [ "$darwin_major" = "26" ]; then
+                sudo hdiutil detach -force /tmp/SSHRD
+            else
+                hdiutil detach -force /tmp/SSHRD
+            fi
         else
     
             "$dir"/hfsplus work/ramdisk.dmg extract /usr/sbin/asr work/asr >/dev/null
